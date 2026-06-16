@@ -1,0 +1,338 @@
+
+<div id="erd"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+  },
+});
+const { svg } = await mermaid.render('erd-svg', `classDiagram
+  namespace Entities {
+    class User {
+      +int Id
+      +string Name
+      +string Username
+      +string Email
+      +string Password
+    }
+    class Store {
+      +int Id
+      +string Name
+      +bool HasMembership
+    }
+    class Item {
+      +int Id
+      +string Name
+    }
+    class Price {
+      +int Id
+      +int ItemId
+      +int StoreId
+      +decimal RegularPrice
+      +decimal? MemberPrice
+    }
+    class SavedItem {
+      +int Id
+      +int UserId
+      +int ItemId
+    }
+    class GroceryListItem {
+      +int Id
+      +int UserId
+      +int ItemId
+      +int Quantity
+    }
+    class UserStoreMembership {
+      +int Id
+      +int UserId
+      +int StoreId
+    }
+  }
+
+  namespace Repositories {
+    class IUserRepository {
+      <<interface>>
+      +GetById(int id) User
+      +GetByEmail(string email) User
+      +Create(User user) User
+      +Delete(int id) bool
+    }
+    class UserRepository {
+      +GetById(int id) User
+      +GetByEmail(string email) User
+      +Create(User user) User
+      +Delete(int id) bool
+    }
+    class IStoreRepository {
+      <<interface>>
+      +GetAll() List~Store~
+      +GetById(int id) Store
+    }
+    class StoreRepository {
+      +GetAll() List~Store~
+      +GetById(int id) Store
+    }
+    class IItemRepository {
+      <<interface>>
+      +Search(string query) List~Item~
+      +GetById(int id) Item
+    }
+    class ItemRepository {
+      +Search(string query) List~Item~
+      +GetById(int id) Item
+    }
+    class IPriceRepository {
+      <<interface>>
+      +GetByItemId(int itemId) List~Price~
+      +UpsertPrice(Price price) Price
+    }
+    class PriceRepository {
+      +GetByItemId(int itemId) List~Price~
+      +UpsertPrice(Price price) Price
+    }
+    class ISavedItemRepository {
+      <<interface>>
+      +GetByUserId(int userId) List~SavedItem~
+      +Add(SavedItem item) SavedItem
+      +Delete(int id) bool
+      +ExistsForUser(int userId, int itemId) bool
+    }
+    class SavedItemRepository {
+      +GetByUserId(int userId) List~SavedItem~
+      +Add(SavedItem item) SavedItem
+      +Delete(int id) bool
+      +ExistsForUser(int userId, int itemId) bool
+    }
+    class IGroceryListItemRepository {
+      <<interface>>
+      +GetByUserId(int userId) List~GroceryListItem~
+      +Add(GroceryListItem item) GroceryListItem
+      +Update(GroceryListItem item) GroceryListItem
+      +Delete(int id) bool
+    }
+    class GroceryListItemRepository {
+      +GetByUserId(int userId) List~GroceryListItem~
+      +Add(GroceryListItem item) GroceryListItem
+      +Update(GroceryListItem item) GroceryListItem
+      +Delete(int id) bool
+    }
+    class IUserStoreMembershipRepository {
+      <<interface>>
+      +GetByUserId(int userId) List~UserStoreMembership~
+      +Add(UserStoreMembership m) UserStoreMembership
+      +Delete(int userId, int storeId) bool
+    }
+    class UserStoreMembershipRepository {
+      +GetByUserId(int userId) List~UserStoreMembership~
+      +Add(UserStoreMembership m) UserStoreMembership
+      +Delete(int userId, int storeId) bool
+    }
+  }
+
+  namespace Services {
+    class IAuthService {
+      <<interface>>
+      +Register(RegisterDto dto) UserDto
+      +Login(LoginDto dto) AuthResultDto
+    }
+    class AuthService {
+      -IUserRepository _userRepo
+      +Register(RegisterDto dto) UserDto
+      +Login(LoginDto dto) AuthResultDto
+    }
+    class IItemService {
+      <<interface>>
+      +Search(string query) List~ItemDto~
+    }
+    class ItemService {
+      -IItemRepository _itemRepo
+      -IKrogerClient _krogerClient
+      +Search(string query) List~ItemDto~
+    }
+    class ISavedItemService {
+      <<interface>>
+      +GetForUser(int userId) List~ItemDto~
+      +Save(int userId, int itemId) bool
+      +Remove(int userId, int savedItemId) bool
+    }
+    class SavedItemService {
+      -ISavedItemRepository _savedItemRepo
+      +GetForUser(int userId) List~ItemDto~
+      +Save(int userId, int itemId) bool
+      +Remove(int userId, int savedItemId) bool
+    }
+    class IGroceryListService {
+      <<interface>>
+      +GetForUser(int userId) List~GroceryListItemDto~
+      +AddItem(int userId, int itemId, int qty) GroceryListItemDto
+      +UpdateQuantity(int id, int qty) GroceryListItemDto
+      +RemoveItem(int id) bool
+    }
+    class GroceryListService {
+      -IGroceryListItemRepository _listRepo
+      +GetForUser(int userId) List~GroceryListItemDto~
+      +AddItem(int userId, int itemId, int qty) GroceryListItemDto
+      +UpdateQuantity(int id, int qty) GroceryListItemDto
+      +RemoveItem(int id) bool
+    }
+    class IComparisonService {
+      <<interface>>
+      +CompareStores(int userId) List~StoreComparisonDto~
+    }
+    class ComparisonService {
+      -IGroceryListItemRepository _listRepo
+      -IPriceRepository _priceRepo
+      -IUserStoreMembershipRepository _membershipRepo
+      +CompareStores(int userId) List~StoreComparisonDto~
+    }
+    class IMembershipService {
+      <<interface>>
+      +GetForUser(int userId) List~UserStoreMembershipDto~
+      +Add(int userId, int storeId) bool
+      +Remove(int userId, int storeId) bool
+    }
+    class MembershipService {
+      -IUserStoreMembershipRepository _membershipRepo
+      +GetForUser(int userId) List~UserStoreMembershipDto~
+      +Add(int userId, int storeId) bool
+      +Remove(int userId, int storeId) bool
+    }
+    class IPriceSyncService {
+      <<interface>>
+      +SyncPrices() void
+    }
+    class PriceSyncService {
+      -IKrogerClient _krogerClient
+      -IPriceRepository _priceRepo
+      -ISavedItemRepository _savedItemRepo
+      +SyncPrices() void
+    }
+  }
+
+  namespace Controllers {
+    class AuthController {
+      -IAuthService _authService
+      +POST Register(RegisterDto dto) UserDto
+      +POST Login(LoginDto dto) AuthResultDto
+    }
+    class ItemController {
+      -IItemService _itemService
+      +GET Search(string query) List~ItemDto~
+    }
+    class SavedItemController {
+      -ISavedItemService _savedItemService
+      +GET GetAll(int userId) List~ItemDto~
+      +POST Save(int userId, int itemId) bool
+      +DELETE Remove(int savedItemId) bool
+    }
+    class GroceryListController {
+      -IGroceryListService _groceryListService
+      +GET GetList(int userId) List~GroceryListItemDto~
+      +POST AddItem(int userId, int itemId, int qty) GroceryListItemDto
+      +PATCH UpdateQuantity(int id, int qty) GroceryListItemDto
+      +DELETE RemoveItem(int id) bool
+    }
+    class ComparisonController {
+      -IComparisonService _comparisonService
+      +GET Compare(int userId) List~StoreComparisonDto~
+    }
+    class MembershipController {
+      -IMembershipService _membershipService
+      +GET GetMemberships(int userId) List~UserStoreMembershipDto~
+      +POST AddMembership(int userId, int storeId) bool
+      +DELETE RemoveMembership(int userId, int storeId) bool
+    }
+  }
+
+  namespace Infrastructure {
+    class IKrogerClient {
+      <<interface>>
+      +SearchItems(string query) List~ItemDto~
+      +GetPrices(List~int~ itemIds) List~Price~
+    }
+    class KrogerClient {
+      +SearchItems(string query) List~ItemDto~
+      +GetPrices(List~int~ itemIds) List~Price~
+    }
+  }
+
+  IUserRepository <|.. UserRepository : implements
+  IStoreRepository <|.. StoreRepository : implements
+  IItemRepository <|.. ItemRepository : implements
+  IPriceRepository <|.. PriceRepository : implements
+  ISavedItemRepository <|.. SavedItemRepository : implements
+  IGroceryListItemRepository <|.. GroceryListItemRepository : implements
+  IUserStoreMembershipRepository <|.. UserStoreMembershipRepository : implements
+
+  IAuthService <|.. AuthService : implements
+  IItemService <|.. ItemService : implements
+  ISavedItemService <|.. SavedItemService : implements
+  IGroceryListService <|.. GroceryListService : implements
+  IComparisonService <|.. ComparisonService : implements
+  IMembershipService <|.. MembershipService : implements
+  IPriceSyncService <|.. PriceSyncService : implements
+  IKrogerClient <|.. KrogerClient : implements
+
+  AuthService ..> IUserRepository : uses
+  ItemService ..> IItemRepository : uses
+  ItemService ..> IKrogerClient : uses
+  SavedItemService ..> ISavedItemRepository : uses
+  GroceryListService ..> IGroceryListItemRepository : uses
+  ComparisonService ..> IGroceryListItemRepository : uses
+  ComparisonService ..> IPriceRepository : uses
+  ComparisonService ..> IUserStoreMembershipRepository : uses
+  MembershipService ..> IUserStoreMembershipRepository : uses
+  PriceSyncService ..> IKrogerClient : uses
+  PriceSyncService ..> IPriceRepository : uses
+  PriceSyncService ..> ISavedItemRepository : uses
+
+  AuthController ..> IAuthService : uses
+  ItemController ..> IItemService : uses
+  SavedItemController ..> ISavedItemService : uses
+  GroceryListController ..> IGroceryListService : uses
+  ComparisonController ..> IComparisonService : uses
+  MembershipController ..> IMembershipService : uses
+
+  User "1" --> "0..*" SavedItem : has
+  User "1" --> "0..*" GroceryListItem : has
+  User "1" --> "0..*" UserStoreMembership : has
+  Item "1" --> "0..*" SavedItem : referenced by
+  Item "1" --> "0..*" GroceryListItem : referenced by
+  Item "1" --> "0..*" Price : has
+  Store "1" --> "0..*" Price : has
+  Store "1" --> "0..*" UserStoreMembership : referenced by
+`);
+document.getElementById('erd').innerHTML = svg;
+document.querySelectorAll('#erd svg .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0], nums[2], nums[4], nums[6]];
+  const ys = [nums[1], nums[3], nums[5], nums[7]];
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+document.querySelectorAll('#erd svg .row-rect-odd path, #erd svg .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke', 'none');
+});
+</script>
