@@ -1,0 +1,13 @@
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\bin\Debug\net10.0\CartCompare.Entities.deps.json
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\bin\Debug\net10.0\CartCompare.Entities.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\bin\Debug\net10.0\CartCompare.Entities.pdb
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\obj\Debug\net10.0\CartCompare.Entities.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\obj\Debug\net10.0\CartCompare.Entities.AssemblyInfoInputs.cache
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\obj\Debug\net10.0\CartCompare.Entities.AssemblyInfo.cs
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\obj\Debug\net10.0\CartCompare.Entities.csproj.CoreCompileInputs.cache
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\obj\Debug\net10.0\CartCompare.Entities.sourcelink.json
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\obj\Debug\net10.0\CartCompare.Entities.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\obj\Debug\net10.0\refint\CartCompare.Entities.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\obj\Debug\net10.0\CartCompare.Entities.pdb
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\obj\Debug\net10.0\ref\CartCompare.Entities.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Entities\obj\Debug\net10.0\CartCompare.Entities.csproj.AssemblyReference.cache

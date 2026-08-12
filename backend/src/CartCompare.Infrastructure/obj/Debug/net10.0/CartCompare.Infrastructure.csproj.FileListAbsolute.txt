@@ -1,0 +1,16 @@
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\bin\Debug\net10.0\CartCompare.Infrastructure.deps.json
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\bin\Debug\net10.0\CartCompare.Infrastructure.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\bin\Debug\net10.0\CartCompare.Infrastructure.pdb
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\bin\Debug\net10.0\CartCompare.Entities.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\bin\Debug\net10.0\CartCompare.Entities.pdb
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\CartCompare.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\CartCompare.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\CartCompare.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\CartCompare.Infrastructure.AssemblyInfo.cs
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\CartCompare.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\CartCompare.Infrastructure.sourcelink.json
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\CartComp.B23F3CD6.Up2Date
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\CartCompare.Infrastructure.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\refint\CartCompare.Infrastructure.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\CartCompare.Infrastructure.pdb
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\ref\CartCompare.Infrastructure.dll

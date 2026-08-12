@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CartCompare.Api/CartCompare.Api.csproj" />
+    <Project Path="src/CartCompare.Entities/CartCompare.Entities.csproj" />
+    <Project Path="src/CartCompare.Infrastructure/CartCompare.Infrastructure.csproj" />
+  </Folder>
+</Solution>
