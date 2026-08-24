@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "eiBYEctPAZ0=",
+  "dgSpecHash": "EG46/rQqOdw=",
   "success": true,
-  "projectFilePath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Api\\CartCompare.Api.csproj",
+  "projectFilePath": "C:\\Users\\katel\\git_repos\\CartCompare\\backend\\src\\CartCompare.Api\\CartCompare.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.10\\microsoft.aspnetcore.openapi.10.0.10.nupkg.sha512",
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
@@ -12,9 +12,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "Package 'Microsoft.OpenApi' 2.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-v5pm-xwqc-g5wc",
-      "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Api\\CartCompare.Api.csproj",
+      "projectPath": "C:\\Users\\katel\\git_repos\\CartCompare\\backend\\src\\CartCompare.Api\\CartCompare.Api.csproj",
       "warningLevel": 1,
-      "filePath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Api\\CartCompare.Api.csproj",
+      "filePath": "C:\\Users\\katel\\git_repos\\CartCompare\\backend\\src\\CartCompare.Api\\CartCompare.Api.csproj",
       "libraryId": "Microsoft.OpenApi",
       "targetGraphs": [
         "net10.0"

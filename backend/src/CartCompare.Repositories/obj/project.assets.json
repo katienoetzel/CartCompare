@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\CartCompare.Repositories.csproj",
+      "projectUniqueName": "C:\\Users\\katel\\git_repos\\CartCompare\\backend\\src\\CartCompare.Repositories\\CartCompare.Repositories.csproj",
       "projectName": "CartCompare.Repositories",
-      "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\CartCompare.Repositories.csproj",
+      "projectPath": "C:\\Users\\katel\\git_repos\\CartCompare\\backend\\src\\CartCompare.Repositories\\CartCompare.Repositories.csproj",
       "packagesPath": "C:\\Users\\katel\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\obj\\",
+      "outputPath": "C:\\Users\\katel\\git_repos\\CartCompare\\backend\\src\\CartCompare.Repositories\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\katel\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -45,7 +45,7 @@
         "auditLevel": "low",
         "auditMode": "all"
       },
-      "SdkAnalysisLevel": "10.0.300"
+      "SdkAnalysisLevel": "10.0.400"
     },
     "frameworks": {
       "net10.0": {
@@ -67,7 +67,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.302/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.400/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",

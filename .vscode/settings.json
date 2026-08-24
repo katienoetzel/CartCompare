@@ -1,0 +1,8 @@
+{
+    "editor.defaultFormatter": "nromanov.dotrush",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "[csharp]": {
+        "editor.defaultFormatter": "nromanov.dotrush"
+    }
+}
