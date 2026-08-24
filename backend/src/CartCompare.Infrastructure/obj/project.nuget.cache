@@ -1,12 +1,18 @@
 {
   "version": 2,
-  "dgSpecHash": "1CEM6+ZZCa4=",
+  "dgSpecHash": "bzoBNOCL8yo=",
   "success": true,
-  "projectFilePath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Infrastructure\\CartCompare.Infrastructure.csproj",
+  "projectFilePath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Infrastructure\\CartCompare.Infrastructure.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.aspnetcore.cryptography.internal\\10.0.11\\microsoft.aspnetcore.cryptography.internal.10.0.11.nupkg.sha512",
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.aspnetcore.cryptography.keyderivation\\10.0.11\\microsoft.aspnetcore.cryptography.keyderivation.10.0.11.nupkg.sha512",
+    "C:\\Users\\katel\\.nuget\\packages\\microsoft.aspnetcore.identity.entityframeworkcore\\10.0.11\\microsoft.aspnetcore.identity.entityframeworkcore.10.0.11.nupkg.sha512",
+    "C:\\Users\\katel\\.nuget\\packages\\microsoft.entityframeworkcore\\10.0.11\\microsoft.entityframeworkcore.10.0.11.nupkg.sha512",
+    "C:\\Users\\katel\\.nuget\\packages\\microsoft.entityframeworkcore.abstractions\\10.0.11\\microsoft.entityframeworkcore.abstractions.10.0.11.nupkg.sha512",
+    "C:\\Users\\katel\\.nuget\\packages\\microsoft.entityframeworkcore.analyzers\\10.0.11\\microsoft.entityframeworkcore.analyzers.10.0.11.nupkg.sha512",
+    "C:\\Users\\katel\\.nuget\\packages\\microsoft.entityframeworkcore.relational\\10.0.11\\microsoft.entityframeworkcore.relational.10.0.11.nupkg.sha512",
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.extensions.caching.abstractions\\10.0.11\\microsoft.extensions.caching.abstractions.10.0.11.nupkg.sha512",
+    "C:\\Users\\katel\\.nuget\\packages\\microsoft.extensions.caching.memory\\10.0.11\\microsoft.extensions.caching.memory.10.0.11.nupkg.sha512",
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.extensions.configuration\\10.0.11\\microsoft.extensions.configuration.10.0.11.nupkg.sha512",
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.extensions.configuration.abstractions\\10.0.11\\microsoft.extensions.configuration.abstractions.10.0.11.nupkg.sha512",
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.extensions.configuration.binder\\10.0.11\\microsoft.extensions.configuration.binder.10.0.11.nupkg.sha512",
@@ -20,7 +26,9 @@
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\10.0.11\\microsoft.extensions.logging.abstractions.10.0.11.nupkg.sha512",
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.extensions.options\\10.0.11\\microsoft.extensions.options.10.0.11.nupkg.sha512",
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.extensions.options.configurationextensions\\10.0.11\\microsoft.extensions.options.configurationextensions.10.0.11.nupkg.sha512",
-    "C:\\Users\\katel\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.11\\microsoft.extensions.primitives.10.0.11.nupkg.sha512"
+    "C:\\Users\\katel\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.11\\microsoft.extensions.primitives.10.0.11.nupkg.sha512",
+    "C:\\Users\\katel\\.nuget\\packages\\npgsql\\10.0.3\\npgsql.10.0.3.nupkg.sha512",
+    "C:\\Users\\katel\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\10.0.3\\npgsql.entityframeworkcore.postgresql.10.0.3.nupkg.sha512"
   ],
   "logs": []
 }
