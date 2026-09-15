@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using CartCompare.Api.Models.Requests;
+using CartCompare.Api.Models.Responses;
 using CartCompare.Services.Interfaces;
+using CartCompare.Services.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -30,9 +32,16 @@ public class GroceryListController : ControllerBase
         }
 
         var items =
-            await _groceryListService.GetItemsAsync(userId.Value);
+            await _groceryListService.GetItemsAsync(
+                userId.Value
+            );
 
-        return Ok(items);
+        var response =
+            items
+                .Select(ToResponse)
+                .ToList();
+
+        return Ok(response);
     }
 
     [HttpPut("{itemId:int}")]
@@ -62,7 +71,7 @@ public class GroceryListController : ControllerBase
             });
         }
 
-        return Ok(groceryListItem);
+        return Ok(ToResponse(groceryListItem));
     }
 
     [HttpDelete("{itemId:int}")]
@@ -100,5 +109,22 @@ public class GroceryListController : ControllerBase
         }
 
         return null;
+    }
+
+    private static GroceryListItemResponse ToResponse(
+    GroceryListItemDetails item)
+    {
+        return new GroceryListItemResponse
+        {
+            Id = item.GroceryListItemId,
+            ItemId = item.ItemId,
+            Name = item.ItemName,
+            Brand = item.Brand,
+            Size = item.Size,
+            Category = item.Category,
+            Quantity = item.Quantity,
+            CreatedAt = item.CreatedAt,
+            UpdatedAt = item.UpdatedAt
+        };
     }
 }

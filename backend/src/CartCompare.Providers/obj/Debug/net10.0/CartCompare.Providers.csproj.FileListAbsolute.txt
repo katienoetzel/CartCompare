@@ -1,0 +1,16 @@
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\bin\Debug\net10.0\CartCompare.Providers.deps.json
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\bin\Debug\net10.0\CartCompare.Providers.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\bin\Debug\net10.0\CartCompare.Providers.pdb
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\bin\Debug\net10.0\CartCompare.Entities.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\bin\Debug\net10.0\CartCompare.Entities.pdb
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\obj\Debug\net10.0\CartCompare.Providers.csproj.AssemblyReference.cache
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\obj\Debug\net10.0\CartCompare.Providers.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\obj\Debug\net10.0\CartCompare.Providers.AssemblyInfoInputs.cache
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\obj\Debug\net10.0\CartCompare.Providers.AssemblyInfo.cs
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\obj\Debug\net10.0\CartCompare.Providers.csproj.CoreCompileInputs.cache
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\obj\Debug\net10.0\CartCompare.Providers.sourcelink.json
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\obj\Debug\net10.0\CartComp.59E86F37.Up2Date
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\obj\Debug\net10.0\CartCompare.Providers.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\obj\Debug\net10.0\refint\CartCompare.Providers.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\obj\Debug\net10.0\CartCompare.Providers.pdb
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Providers\obj\Debug\net10.0\ref\CartCompare.Providers.dll

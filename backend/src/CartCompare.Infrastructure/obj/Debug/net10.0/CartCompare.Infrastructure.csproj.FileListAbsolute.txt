@@ -32,3 +32,7 @@ C:\Users\katel\git_repos\CartCompare\backend\src\CartCompare.Infrastructure\obj\
 C:\Users\katel\git_repos\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\ref\CartCompare.Infrastructure.dll
 C:\Users\katel\git_repos\CartCompare\backend\src\CartCompare.Infrastructure\bin\Debug\net10.0\CartCompare.Infrastructure.runtimeconfig.json
 C:\Users\katel\git_repos\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\CartCompare.Infrastructure.genruntimeconfig.cache
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\bin\Debug\net10.0\CartCompare.Infrastructure.runtimeconfig.json
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\obj\Debug\net10.0\CartCompare.Infrastructure.genruntimeconfig.cache
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\bin\Debug\net10.0\CartCompare.Providers.dll
+C:\Users\katel\git\CartCompare\backend\src\CartCompare.Infrastructure\bin\Debug\net10.0\CartCompare.Providers.pdb

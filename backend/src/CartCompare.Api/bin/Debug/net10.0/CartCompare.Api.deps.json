@@ -618,11 +618,23 @@
       "CartCompare.Infrastructure/1.0.0": {
         "dependencies": {
           "CartCompare.Entities": "1.0.0",
+          "CartCompare.Providers": "1.0.0",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "10.0.11",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "10.0.3"
         },
         "runtime": {
           "CartCompare.Infrastructure.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "CartCompare.Providers/1.0.0": {
+        "dependencies": {
+          "CartCompare.Entities": "1.0.0"
+        },
+        "runtime": {
+          "CartCompare.Providers.dll": {
             "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
           }
@@ -644,6 +656,7 @@
       "CartCompare.Services/1.0.0": {
         "dependencies": {
           "CartCompare.Entities": "1.0.0",
+          "CartCompare.Providers": "1.0.0",
           "CartCompare.Repositories": "1.0.0"
         },
         "runtime": {
@@ -919,6 +932,11 @@
       "sha512": ""
     },
     "CartCompare.Infrastructure/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "CartCompare.Providers/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

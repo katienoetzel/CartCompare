@@ -3,6 +3,7 @@
     <Project Path="src/CartCompare.Api/CartCompare.Api.csproj" />
     <Project Path="src/CartCompare.Entities/CartCompare.Entities.csproj" />
     <Project Path="src/CartCompare.Infrastructure/CartCompare.Infrastructure.csproj" />
+    <Project Path="src/CartCompare.Providers/CartCompare.Providers.csproj" />
     <Project Path="src/CartCompare.Repositories/CartCompare.Repositories.csproj" />
     <Project Path="src/CartCompare.Services/CartCompare.Services.csproj" />
   </Folder>

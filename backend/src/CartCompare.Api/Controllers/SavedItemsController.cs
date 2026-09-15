@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using CartCompare.Api.Models.Responses;
 using CartCompare.Services.Interfaces;
+using CartCompare.Services.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,9 +30,16 @@ public class SavedItemsController : ControllerBase
         }
 
         var savedItems =
-            await _savedItemService.GetSavedItemsAsync(userId.Value);
+            await _savedItemService.GetSavedItemsAsync(
+                userId.Value
+            );
 
-        return Ok(savedItems);
+        var response =
+            savedItems
+                .Select(ToResponse)
+                .ToList();
+
+        return Ok(response);
     }
 
     [HttpPost("{itemId:int}")]
@@ -49,7 +58,15 @@ public class SavedItemsController : ControllerBase
                 itemId
             );
 
-        return Ok(savedItem);
+        if (savedItem is null)
+        {
+            return NotFound(new
+            {
+                message = "Item not found."
+            });
+        }
+
+        return Ok(ToResponse(savedItem));
     }
 
     [HttpDelete("{itemId:int}")]
@@ -87,5 +104,19 @@ public class SavedItemsController : ControllerBase
         }
 
         return null;
+    }
+    private static SavedItemResponse ToResponse(
+    SavedItemDetails savedItem)
+    {
+        return new SavedItemResponse
+        {
+            Id = savedItem.SavedItemId,
+            ItemId = savedItem.ItemId,
+            Name = savedItem.ItemName,
+            Brand = savedItem.Brand,
+            Size = savedItem.Size,
+            Category = savedItem.Category,
+            CreatedAt = savedItem.CreatedAt
+        };
     }
 }

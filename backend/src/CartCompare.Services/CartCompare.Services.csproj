@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CartCompare.Entities\CartCompare.Entities.csproj" />
     <ProjectReference Include="..\CartCompare.Repositories\CartCompare.Repositories.csproj" />
+    <ProjectReference Include="..\CartCompare.Providers\CartCompare.Providers.csproj" />
   </ItemGroup>
 
   <ItemGroup>

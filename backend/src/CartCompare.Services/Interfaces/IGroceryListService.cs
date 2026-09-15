@@ -1,12 +1,14 @@
-using CartCompare.Entities;
+using CartCompare.Services.Models;
 
 namespace CartCompare.Services.Interfaces;
 
 public interface IGroceryListService
 {
-    Task<List<GroceryListItem>> GetItemsAsync(int userId);
+    Task<List<GroceryListItemDetails>> GetItemsAsync(
+        int userId
+    );
 
-    Task<GroceryListItem?> SetQuantityAsync(
+    Task<GroceryListItemDetails?> SetQuantityAsync(
         int userId,
         int itemId,
         int quantity

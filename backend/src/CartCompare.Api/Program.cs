@@ -2,14 +2,20 @@ using System.Text;
 using CartCompare.Api.Authentication;
 using CartCompare.Entities;
 using CartCompare.Infrastructure.Data;
+using CartCompare.Infrastructure.Providers;
+using CartCompare.Infrastructure.Providers.Kroger;
+using CartCompare.Providers.Interfaces;
 using CartCompare.Repositories.Interfaces;
 using CartCompare.Repositories.Repositories;
 using CartCompare.Services.Interfaces;
+
 using CartCompare.Services.Services;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -80,10 +86,67 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
 builder.Services.AddScoped<IItemService, ItemService>();
 
+builder.Services.AddScoped<
+    IPriceProviderResolver,
+    PriceProviderResolver
+>();
+
+builder.Services.AddScoped<KrogerPriceProvider>();
+
+builder.Services.AddScoped<IPriceProvider>(
+    provider =>
+        provider.GetRequiredService<KrogerPriceProvider>()
+);
+
+builder.Services.AddScoped<IStoreLocationRepository, StoreLocationRepository>();
+builder.Services.AddScoped<IStoreLocationService, StoreLocationService>();
+
+builder.Services.AddScoped<IProductPriceSyncService, ProductPriceSyncService>();
+
+builder.Services.AddScoped<IStoreComparisonService, StoreComparisonService>();
+
+builder.Services.AddScoped<
+    IStoreLocationSyncService,
+    StoreLocationSyncService
+>();
+
+builder.Services.AddScoped<
+    IProductMatchingService,
+    ProductMatchingService
+>();
+
+builder.Services.AddScoped<
+    IProductCandidateService,
+    ProductCandidateService
+>();
+
+builder.Services.AddScoped<IPriceRepository, PriceRepository>();
+builder.Services.AddScoped<IPriceService, PriceService>();
+
+builder.Services.AddScoped<IRetailerProductRepository, RetailerProductRepository>();
+builder.Services.AddScoped<IRetailerProductService, RetailerProductService>();
+
 builder.Services.AddScoped<IGroceryListRepository, GroceryListRepository>();
 builder.Services.AddScoped<IGroceryListService, GroceryListService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+var krogerBaseUrl =
+    builder.Configuration["Kroger:BaseUrl"]
+    ?? throw new InvalidOperationException(
+        "Kroger base URL is not configured."
+    );
+
+builder.Services.AddHttpClient(
+    "Kroger",
+    client =>
+    {
+        client.BaseAddress =
+            new Uri(krogerBaseUrl);
+    }
+);
+
+builder.Services.AddSingleton<KrogerTokenService>();
 
 builder.Services.AddScoped<
     IUserRetailerMembershipRepository,
@@ -97,7 +160,23 @@ builder.Services.AddScoped<
 
 builder.Services.AddOpenApi();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "DevelopmentFrontend",
+        policy =>
+        {
+            policy
+                .WithOrigins("http://localhost:5173")
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    );
+});
+
 var app = builder.Build();
+
+app.UseCors("DevelopmentFrontend");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -1,31 +1,76 @@
 using CartCompare.Entities;
 using CartCompare.Repositories.Interfaces;
 using CartCompare.Services.Interfaces;
+using CartCompare.Services.Models;
 
 namespace CartCompare.Services.Services;
 
 public class SavedItemService : ISavedItemService
 {
     private readonly ISavedItemRepository _savedItemRepository;
+    private readonly IItemRepository _itemRepository;
 
-    public SavedItemService(ISavedItemRepository savedItemRepository)
+    public SavedItemService(
+        ISavedItemRepository savedItemRepository,
+        IItemRepository itemRepository)
     {
         _savedItemRepository = savedItemRepository;
+        _itemRepository = itemRepository;
     }
 
-    public async Task<List<SavedItem>> GetSavedItemsAsync(int userId)
+    public async Task<List<SavedItemDetails>>
+        GetSavedItemsAsync(int userId)
     {
-        return await _savedItemRepository.GetByUserIdAsync(userId);
+        var savedItems =
+            await _savedItemRepository.GetByUserIdAsync(userId);
+
+        var results = new List<SavedItemDetails>();
+
+        foreach (var savedItem in savedItems)
+        {
+            var item =
+                await _itemRepository.GetByIdAsync(
+                    savedItem.ItemId
+                );
+
+            if (item is null)
+            {
+                continue;
+            }
+
+            results.Add(
+                CreateDetails(savedItem, item)
+            );
+        }
+
+        return results;
     }
 
-    public async Task<SavedItem> SaveItemAsync(int userId, int itemId)
+    public async Task<SavedItemDetails?> SaveItemAsync(
+        int userId,
+        int itemId)
     {
+        var item =
+            await _itemRepository.GetByIdAsync(itemId);
+
+        if (item is null)
+        {
+            return null;
+        }
+
         var existingSavedItem =
-            await _savedItemRepository.GetByUserAndItemAsync(userId, itemId);
+            await _savedItemRepository
+                .GetByUserAndItemAsync(
+                    userId,
+                    itemId
+                );
 
         if (existingSavedItem is not null)
         {
-            return existingSavedItem;
+            return CreateDetails(
+                existingSavedItem,
+                item
+            );
         }
 
         var savedItem = new SavedItem
@@ -37,13 +82,19 @@ public class SavedItemService : ISavedItemService
 
         await _savedItemRepository.AddAsync(savedItem);
 
-        return savedItem;
+        return CreateDetails(savedItem, item);
     }
 
-    public async Task<bool> RemoveSavedItemAsync(int userId, int itemId)
+    public async Task<bool> RemoveSavedItemAsync(
+        int userId,
+        int itemId)
     {
         var savedItem =
-            await _savedItemRepository.GetByUserAndItemAsync(userId, itemId);
+            await _savedItemRepository
+                .GetByUserAndItemAsync(
+                    userId,
+                    itemId
+                );
 
         if (savedItem is null)
         {
@@ -53,5 +104,21 @@ public class SavedItemService : ISavedItemService
         await _savedItemRepository.RemoveAsync(savedItem);
 
         return true;
+    }
+
+    private static SavedItemDetails CreateDetails(
+        SavedItem savedItem,
+        Item item)
+    {
+        return new SavedItemDetails
+        {
+            SavedItemId = savedItem.Id,
+            ItemId = item.Id,
+            ItemName = item.Name,
+            Brand = item.Brand,
+            Size = item.Size,
+            Category = item.Category,
+            CreatedAt = savedItem.CreatedAt
+        };
     }
 }

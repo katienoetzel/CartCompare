@@ -9,6 +9,7 @@
       "CartCompare.Services/1.0.0": {
         "dependencies": {
           "CartCompare.Entities": "1.0.0",
+          "CartCompare.Providers": "1.0.0",
           "CartCompare.Repositories": "1.0.0",
           "Microsoft.Extensions.Identity.Core": "10.0.11"
         },
@@ -187,6 +188,22 @@
           }
         }
       },
+      "Microsoft.Extensions.Http/10.0.11": {
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.11",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.11",
+          "Microsoft.Extensions.Diagnostics": "10.0.11",
+          "Microsoft.Extensions.Logging": "10.0.11",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.11",
+          "Microsoft.Extensions.Options": "10.0.11"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.Extensions.Http.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.1126.37416"
+          }
+        }
+      },
       "Microsoft.Extensions.Identity.Core/10.0.11": {
         "dependencies": {
           "Microsoft.AspNetCore.Cryptography.KeyDerivation": "10.0.11",
@@ -311,11 +328,25 @@
       "CartCompare.Infrastructure/1.0.0": {
         "dependencies": {
           "CartCompare.Entities": "1.0.0",
+          "CartCompare.Providers": "1.0.0",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "10.0.11",
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.11",
+          "Microsoft.Extensions.Http": "10.0.11",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "10.0.3"
         },
         "runtime": {
           "CartCompare.Infrastructure.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "CartCompare.Providers/1.0.0": {
+        "dependencies": {
+          "CartCompare.Entities": "1.0.0"
+        },
+        "runtime": {
+          "CartCompare.Providers.dll": {
             "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
           }
@@ -447,6 +478,13 @@
       "path": "microsoft.extensions.diagnostics.abstractions/10.0.11",
       "hashPath": "microsoft.extensions.diagnostics.abstractions.10.0.11.nupkg.sha512"
     },
+    "Microsoft.Extensions.Http/10.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ujx8RvcKzkxPFBguwgiygbwWVHVK0P7HFlNJ6I0JBRb28tzwe42jixBoA+dGmqG9IHepPVcm04vv2IDnU93ekA==",
+      "path": "microsoft.extensions.http/10.0.11",
+      "hashPath": "microsoft.extensions.http.10.0.11.nupkg.sha512"
+    },
     "Microsoft.Extensions.Identity.Core/10.0.11": {
       "type": "package",
       "serviceable": true,
@@ -516,6 +554,11 @@
       "sha512": ""
     },
     "CartCompare.Infrastructure/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "CartCompare.Providers/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
