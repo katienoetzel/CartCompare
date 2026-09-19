@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-    ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=cartcompare_test;Username=postgres;Password=postgres
-    Jwt__Key: CartCompare_CI_Only_Jwt_Key_2026_Not_For_Production_123456789
+      ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=cartcompare_test;Username=postgres;Password=postgres
+      Jwt__Key: CartCompare_CI_Only_Jwt_Key_2026_Not_For_Production_123456789
 
     services:
       postgres:
@@ -37,10 +37,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
 
@@ -73,18 +73,18 @@ jobs:
   # =====================================================
 
   frontend:
-  name: Frontend tests
-  runs-on: ubuntu-latest
+    name: Frontend tests
+    runs-on: ubuntu-latest
 
-  env:
-    VITE_API_BASE_URL: http://localhost:5055
+    env:
+      VITE_API_BASE_URL: http://localhost:5055
 
-  steps:
+    steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
@@ -103,8 +103,8 @@ jobs:
         run: npm test
 
       - name: Build frontend
-  working-directory: frontend
-  run: npm run build
+        working-directory: frontend
+        run: npm run build
 
   # =====================================================
   # End-to-end
@@ -135,15 +135,15 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
@@ -177,7 +177,7 @@ jobs:
 
       - name: Upload Playwright failure artifacts
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-test-results
           path: frontend/test-results
