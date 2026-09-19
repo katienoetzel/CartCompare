@@ -16,6 +16,10 @@ jobs:
     name: Backend tests
     runs-on: ubuntu-latest
 
+    env:
+    ConnectionStrings__DefaultConnection: Host=localhost;Port=5432;Database=cartcompare_test;Username=postgres;Password=postgres
+    Jwt__Key: CartCompare_CI_Only_Jwt_Key_2026_Not_For_Production_123456789
+
     services:
       postgres:
         image: postgres:17
@@ -69,10 +73,13 @@ jobs:
   # =====================================================
 
   frontend:
-    name: Frontend tests
-    runs-on: ubuntu-latest
+  name: Frontend tests
+  runs-on: ubuntu-latest
 
-    steps:
+  env:
+    VITE_API_BASE_URL: http://localhost:5055
+
+  steps:
       - name: Check out repository
         uses: actions/checkout@v7
 
@@ -96,10 +103,8 @@ jobs:
         run: npm test
 
       - name: Build frontend
-        working-directory: frontend
-        env:
-          VITE_API_BASE_URL: http://localhost:5055
-        run: npm run build
+  working-directory: frontend
+  run: npm run build
 
   # =====================================================
   # End-to-end
