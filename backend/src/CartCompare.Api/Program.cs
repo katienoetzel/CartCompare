@@ -176,14 +176,22 @@ builder.Services.AddScoped<
 
 builder.Services.AddOpenApi();
 
+var frontendOrigin =
+    builder.Configuration[
+        "Frontend:Origin"
+    ]
+    ?? "http://localhost:5173";
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
-        "DevelopmentFrontend",
+        "Frontend",
         policy =>
         {
             policy
-                .WithOrigins("http://localhost:5173")
+                .WithOrigins(
+                    frontendOrigin
+                )
                 .AllowAnyHeader()
                 .AllowAnyMethod();
         }
@@ -238,7 +246,7 @@ if (
         .MigrateAsync();
 }
 
-app.UseCors("DevelopmentFrontend");
+app.UseCors("Frontend");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
