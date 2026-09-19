@@ -1,0 +1,19 @@
+# Build output
+**/bin/
+**/obj/
+
+# Tests are not needed in the production image
+tests/
+
+# IDE files
+.vs/
+.idea/
+
+# Git metadata
+.git/
+.gitignore
+
+# Local files
+*.user
+*.suo
+*.log
