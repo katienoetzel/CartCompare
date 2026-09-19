@@ -1,4 +1,5 @@
 using System.Text;
+
 using CartCompare.Api.Authentication;
 using CartCompare.Entities;
 using CartCompare.Infrastructure.Data;
@@ -8,7 +9,6 @@ using CartCompare.Providers.Interfaces;
 using CartCompare.Repositories.Interfaces;
 using CartCompare.Repositories.Repositories;
 using CartCompare.Services.Interfaces;
-
 using CartCompare.Services.Services;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -19,9 +19,13 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+
+// ==================================================
+// Database
+// ==================================================
+
 var databaseConnectionName =
     builder.Configuration.GetValue<bool>(
         "E2E:Enabled"
@@ -43,6 +47,12 @@ builder.Services.AddDbContext<CartCompareDbContext>(
             databaseConnectionString
         )
 );
+
+
+// ==================================================
+// Identity
+// ==================================================
+
 builder.Services
     .AddIdentityCore<ApplicationUser>(options =>
     {
@@ -57,11 +67,22 @@ builder.Services
     .AddRoles<IdentityRole<int>>()
     .AddEntityFrameworkStores<CartCompareDbContext>();
 
-var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("JWT signing key is not configured.");
 
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
+// ==================================================
+// JWT authentication
+// ==================================================
+
+var jwtKey =
+    builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException(
+        "JWT signing key is not configured."
+    );
+
+var jwtIssuer =
+    builder.Configuration["Jwt:Issuer"];
+
+var jwtAudience =
+    builder.Configuration["Jwt:Audience"];
 
 builder.Services
     .AddAuthentication(options =>
@@ -74,33 +95,67 @@ builder.Services
     })
     .AddJwtBearer(options =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
 
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
+                ValidIssuer = jwtIssuer,
+                ValidAudience = jwtAudience,
 
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey)
-            )
-        };
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(
+                            jwtKey
+                        )
+                    )
+            };
     });
 
 builder.Services.AddAuthorization();
-builder.Services.AddScoped<IRetailerRepository, RetailerRepository>();
-builder.Services.AddScoped<IRetailerService, RetailerService>();
 
-builder.Services.AddScoped<ISavedItemRepository, SavedItemRepository>();
-builder.Services.AddScoped<ISavedItemService, SavedItemService>();
 
-builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+// ==================================================
+// Repositories and services
+// ==================================================
 
-builder.Services.AddScoped<IItemRepository, ItemRepository>();
-builder.Services.AddScoped<IItemService, ItemService>();
+builder.Services.AddScoped<
+    IRetailerRepository,
+    RetailerRepository
+>();
+
+builder.Services.AddScoped<
+    IRetailerService,
+    RetailerService
+>();
+
+builder.Services.AddScoped<
+    ISavedItemRepository,
+    SavedItemRepository
+>();
+
+builder.Services.AddScoped<
+    ISavedItemService,
+    SavedItemService
+>();
+
+builder.Services.AddScoped<
+    IJwtTokenService,
+    JwtTokenService
+>();
+
+builder.Services.AddScoped<
+    IItemRepository,
+    ItemRepository
+>();
+
+builder.Services.AddScoped<
+    IItemService,
+    ItemService
+>();
 
 builder.Services.AddScoped<
     IPriceProviderResolver,
@@ -111,15 +166,30 @@ builder.Services.AddScoped<KrogerPriceProvider>();
 
 builder.Services.AddScoped<IPriceProvider>(
     provider =>
-        provider.GetRequiredService<KrogerPriceProvider>()
+        provider.GetRequiredService<
+            KrogerPriceProvider
+        >()
 );
 
-builder.Services.AddScoped<IStoreLocationRepository, StoreLocationRepository>();
-builder.Services.AddScoped<IStoreLocationService, StoreLocationService>();
+builder.Services.AddScoped<
+    IStoreLocationRepository,
+    StoreLocationRepository
+>();
 
-builder.Services.AddScoped<IProductPriceSyncService, ProductPriceSyncService>();
+builder.Services.AddScoped<
+    IStoreLocationService,
+    StoreLocationService
+>();
 
-builder.Services.AddScoped<IStoreComparisonService, StoreComparisonService>();
+builder.Services.AddScoped<
+    IProductPriceSyncService,
+    ProductPriceSyncService
+>();
+
+builder.Services.AddScoped<
+    IStoreComparisonService,
+    StoreComparisonService
+>();
 
 builder.Services.AddScoped<
     IStoreLocationSyncService,
@@ -136,16 +206,55 @@ builder.Services.AddScoped<
     ProductCandidateService
 >();
 
-builder.Services.AddScoped<IPriceRepository, PriceRepository>();
-builder.Services.AddScoped<IPriceService, PriceService>();
+builder.Services.AddScoped<
+    IPriceRepository,
+    PriceRepository
+>();
 
-builder.Services.AddScoped<IRetailerProductRepository, RetailerProductRepository>();
-builder.Services.AddScoped<IRetailerProductService, RetailerProductService>();
+builder.Services.AddScoped<
+    IPriceService,
+    PriceService
+>();
 
-builder.Services.AddScoped<IGroceryListRepository, GroceryListRepository>();
-builder.Services.AddScoped<IGroceryListService, GroceryListService>();
+builder.Services.AddScoped<
+    IRetailerProductRepository,
+    RetailerProductRepository
+>();
 
-builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<
+    IRetailerProductService,
+    RetailerProductService
+>();
+
+builder.Services.AddScoped<
+    IGroceryListRepository,
+    GroceryListRepository
+>();
+
+builder.Services.AddScoped<
+    IGroceryListService,
+    GroceryListService
+>();
+
+builder.Services.AddScoped<
+    IAuthService,
+    AuthService
+>();
+
+builder.Services.AddScoped<
+    IUserRetailerMembershipRepository,
+    UserRetailerMembershipRepository
+>();
+
+builder.Services.AddScoped<
+    IUserRetailerMembershipService,
+    UserRetailerMembershipService
+>();
+
+
+// ==================================================
+// Kroger API
+// ==================================================
 
 var krogerBaseUrl =
     builder.Configuration["Kroger:BaseUrl"]
@@ -164,17 +273,17 @@ builder.Services.AddHttpClient(
 
 builder.Services.AddSingleton<KrogerTokenService>();
 
-builder.Services.AddScoped<
-    IUserRetailerMembershipRepository,
-    UserRetailerMembershipRepository
->();
 
-builder.Services.AddScoped<
-    IUserRetailerMembershipService,
-    UserRetailerMembershipService
->();
+// ==================================================
+// OpenAPI
+// ==================================================
 
 builder.Services.AddOpenApi();
+
+
+// ==================================================
+// CORS
+// ==================================================
 
 var frontendOrigin =
     builder.Configuration[
@@ -198,12 +307,31 @@ builder.Services.AddCors(options =>
     );
 });
 
+
+// ==================================================
+// Build application
+// ==================================================
+
 var app = builder.Build();
 
-if (
+
+// ==================================================
+// Database migrations
+// ==================================================
+
+var e2eEnabled =
     builder.Configuration.GetValue<bool>(
         "E2E:Enabled"
-    )
+    );
+
+var applyMigrations =
+    builder.Configuration.GetValue<bool>(
+        "Database:ApplyMigrations"
+    );
+
+if (
+    e2eEnabled ||
+    applyMigrations
 )
 {
     using var scope =
@@ -215,40 +343,53 @@ if (
                 CartCompareDbContext
             >();
 
-    var databaseName =
-        dbContext.Database
-            .GetDbConnection()
-            .Database;
-
-    if (
-        !string.Equals(
-            databaseName,
-            "cartcompare_e2e",
-            StringComparison.OrdinalIgnoreCase
-        )
-    )
+    // The E2E database is intentionally reset
+    // before every E2E test run.
+    //
+    // This destructive reset is NEVER performed
+    // merely because production migrations are
+    // enabled.
+    if (e2eEnabled)
     {
-        throw new InvalidOperationException(
-            $"Refusing to reset database '{databaseName}'. " +
-            "E2E mode must use cartcompare_e2e."
-        );
-    }
+        var databaseName =
+            dbContext.Database
+                .GetDbConnection()
+                .Database;
 
-    await dbContext.Database
-        .ExecuteSqlRawAsync(
-            """
-            DROP SCHEMA IF EXISTS public CASCADE;
-            CREATE SCHEMA public;
-            """
-        );
+        if (
+            !string.Equals(
+                databaseName,
+                "cartcompare_e2e",
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
+        {
+            throw new InvalidOperationException(
+                $"Refusing to reset database '{databaseName}'. " +
+                "E2E mode must use cartcompare_e2e."
+            );
+        }
+
+        await dbContext.Database
+            .ExecuteSqlRawAsync(
+                """
+                DROP SCHEMA IF EXISTS public CASCADE;
+                CREATE SCHEMA public;
+                """
+            );
+    }
 
     await dbContext.Database
         .MigrateAsync();
 }
 
+
+// ==================================================
+// HTTP pipeline
+// ==================================================
+
 app.UseCors("Frontend");
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -263,4 +404,9 @@ app.MapControllers();
 
 app.Run();
 
-public partial class Program { }
+
+// Required by integration tests that reference
+// the generated Program type.
+public partial class Program
+{
+}
