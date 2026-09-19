@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "z0wG0lnEgkQ=",
+  "dgSpecHash": "b5X0MjSzzT4=",
   "success": true,
-  "projectFilePath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Api\\CartCompare.Api.csproj",
+  "projectFilePath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Api\\CartCompare.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\katel\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\10.0.11\\microsoft.aspnetcore.authentication.jwtbearer.10.0.11.nupkg.sha512",

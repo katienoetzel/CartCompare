@@ -22,10 +22,26 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddDbContext<CartCompareDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection")
+var databaseConnectionName =
+    builder.Configuration.GetValue<bool>(
+        "E2E:Enabled"
     )
+        ? "E2EConnection"
+        : "DefaultConnection";
+
+var databaseConnectionString =
+    builder.Configuration.GetConnectionString(
+        databaseConnectionName
+    )
+    ?? throw new InvalidOperationException(
+        $"Connection string '{databaseConnectionName}' is not configured."
+    );
+
+builder.Services.AddDbContext<CartCompareDbContext>(
+    options =>
+        options.UseNpgsql(
+            databaseConnectionString
+        )
 );
 builder.Services
     .AddIdentityCore<ApplicationUser>(options =>
@@ -175,6 +191,52 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+if (
+    builder.Configuration.GetValue<bool>(
+        "E2E:Enabled"
+    )
+)
+{
+    using var scope =
+        app.Services.CreateScope();
+
+    var dbContext =
+        scope.ServiceProvider
+            .GetRequiredService<
+                CartCompareDbContext
+            >();
+
+    var databaseName =
+        dbContext.Database
+            .GetDbConnection()
+            .Database;
+
+    if (
+        !string.Equals(
+            databaseName,
+            "cartcompare_e2e",
+            StringComparison.OrdinalIgnoreCase
+        )
+    )
+    {
+        throw new InvalidOperationException(
+            $"Refusing to reset database '{databaseName}'. " +
+            "E2E mode must use cartcompare_e2e."
+        );
+    }
+
+    await dbContext.Database
+        .ExecuteSqlRawAsync(
+            """
+            DROP SCHEMA IF EXISTS public CASCADE;
+            CREATE SCHEMA public;
+            """
+        );
+
+    await dbContext.Database
+        .MigrateAsync();
+}
 
 app.UseCors("DevelopmentFrontend");
 

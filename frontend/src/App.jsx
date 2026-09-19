@@ -142,45 +142,37 @@ function App() {
   // -----------------------------------------
 
   useEffect(() => {
-    if (!loggedIn) {
-      setGroceryList([]);
-      return;
-    }
+  if (!loggedIn) {
+    return;
+  }
 
-    refreshGroceryList();
-  }, [loggedIn]);
+  refreshGroceryList();
+}, [loggedIn]);
 
   // -----------------------------------------
   // Load stores when retailer changes
   // -----------------------------------------
 
-  useEffect(() => {
-    if (!selectedRetailerId) {
-      setStores([]);
-      setSelectedStoreIds([]);
-      return;
+useEffect(() => {
+  if (!selectedRetailerId) {
+    return;
+  }
+
+  async function loadStores() {
+    try {
+      const data =
+        await getStoresByRetailer(
+          selectedRetailerId
+        );
+
+      setStores(data);
+    } catch (err) {
+      setError(err.message);
     }
+  }
 
-    async function loadStores() {
-      try {
-        setError("");
-
-        const data =
-          await getStoresByRetailer(
-            selectedRetailerId
-          );
-
-        setStores(data);
-
-        setSelectedStoreIds([]);
-        setComparisonResult(null);
-      } catch (err) {
-        setError(err.message);
-      }
-    }
-
-    loadStores();
-  }, [selectedRetailerId]);
+  loadStores();
+}, [selectedRetailerId]);
 
   // -----------------------------------------
   // Grocery-list refresh helper
@@ -259,6 +251,20 @@ function App() {
 
     setError("");
   }
+
+  function handleRetailerChange(event) {
+  const retailerId =
+    event.target.value;
+
+  setSelectedRetailerId(
+    retailerId
+  );
+
+  setStores([]);
+  setSelectedStoreIds([]);
+  setComparisonResult(null);
+  setError("");
+}
 
   // -----------------------------------------
   // Grocery list
@@ -718,15 +724,10 @@ function App() {
                 value={
                   selectedRetailerId
                 }
-                onChange={(
-                  event
-                ) =>
-                  setSelectedRetailerId(
-                    event
-                      .target
-                      .value
-                  )
-                }
+                onChange={
+  handleRetailerChange
+}
+                
               >
                 <option value="">
                   Select a

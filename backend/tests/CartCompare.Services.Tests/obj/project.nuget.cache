@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "MqM83HH2kaA=",
+  "dgSpecHash": "kuaBqBS0LXc=",
   "success": true,
-  "projectFilePath": "c:\\Users\\katel\\git\\CartCompare\\backend\\tests\\CartCompare.Services.Tests\\CartCompare.Services.Tests.csproj",
+  "projectFilePath": "C:\\Users\\katel\\git\\CartCompare\\backend\\tests\\CartCompare.Services.Tests\\CartCompare.Services.Tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\katel\\.nuget\\packages\\castle.core\\5.1.1\\castle.core.5.1.1.nupkg.sha512",
     "C:\\Users\\katel\\.nuget\\packages\\coverlet.collector\\6.0.4\\coverlet.collector.6.0.4.nupkg.sha512",
