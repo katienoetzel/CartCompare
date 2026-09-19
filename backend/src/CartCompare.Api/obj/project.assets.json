@@ -50,10 +50,10 @@
           }
         }
       },
-      "Microsoft.AspNetCore.OpenApi/10.0.10": {
+      "Microsoft.AspNetCore.OpenApi/10.0.11": {
         "type": "package",
         "dependencies": {
-          "Microsoft.OpenApi": "2.0.0"
+          "Microsoft.OpenApi": "[2.7.5, 3.0.0)"
         },
         "compile": {
           "lib/net10.0/Microsoft.AspNetCore.OpenApi.dll": {
@@ -604,7 +604,7 @@
           }
         }
       },
-      "Microsoft.OpenApi/2.0.0": {
+      "Microsoft.OpenApi/2.7.5": {
         "type": "package",
         "compile": {
           "lib/net8.0/Microsoft.OpenApi.dll": {
@@ -954,10 +954,10 @@
         "microsoft.aspnetcore.identity.entityframeworkcore.nuspec"
       ]
     },
-    "Microsoft.AspNetCore.OpenApi/10.0.10": {
-      "sha512": "d4Atx9IHq7JgX0F/h7Db+m9zAUzC+cKdI9k+OWnnyQIOUQtfvjIEuhvbjPigVMkAmPUgCbJ8Yp6M9ghUqHtJSQ==",
+    "Microsoft.AspNetCore.OpenApi/10.0.11": {
+      "sha512": "R/1EATnPLU+gRfB6lwVkMcymmyAY5ppBBdRN/5lhNEiT3xP1sWccuSFkU/f1lQvN/WgRq5Vn8AhCdE3fqgsL/w==",
       "type": "package",
-      "path": "microsoft.aspnetcore.openapi/10.0.10",
+      "path": "microsoft.aspnetcore.openapi/10.0.11",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -968,7 +968,7 @@
         "build/Microsoft.AspNetCore.OpenApi.targets",
         "lib/net10.0/Microsoft.AspNetCore.OpenApi.dll",
         "lib/net10.0/Microsoft.AspNetCore.OpenApi.xml",
-        "microsoft.aspnetcore.openapi.10.0.10.nupkg.sha512",
+        "microsoft.aspnetcore.openapi.10.0.11.nupkg.sha512",
         "microsoft.aspnetcore.openapi.nuspec"
       ]
     },
@@ -2345,10 +2345,10 @@
         "microsoft.identitymodel.tokens.nuspec"
       ]
     },
-    "Microsoft.OpenApi/2.0.0": {
-      "sha512": "GGYLfzV/G/ct80OZ45JxnWP7NvMX1BCugn/lX7TH5o0lcVaviavsLMTxmFV2AybXWjbi3h6FF1vgZiTK6PXndw==",
+    "Microsoft.OpenApi/2.7.5": {
+      "sha512": "0FA67RSnRM4tcBKqiqVu/HPdZ9+QOKbmeRjxRUGTCjPU4C0bmUhd97Dso7Yild5P7nOV6GxJ2xrK0Kv/O9xp0w==",
       "type": "package",
-      "path": "microsoft.openapi/2.0.0",
+      "path": "microsoft.openapi/2.7.5",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -2359,7 +2359,7 @@
         "lib/netstandard2.0/Microsoft.OpenApi.dll",
         "lib/netstandard2.0/Microsoft.OpenApi.pdb",
         "lib/netstandard2.0/Microsoft.OpenApi.xml",
-        "microsoft.openapi.2.0.0.nupkg.sha512",
+        "microsoft.openapi.2.7.5.nupkg.sha512",
         "microsoft.openapi.nuspec"
       ]
     },
@@ -2707,7 +2707,7 @@
       "CartCompare.Repositories >= 1.0.0",
       "CartCompare.Services >= 1.0.0",
       "Microsoft.AspNetCore.Authentication.JwtBearer >= 10.0.11",
-      "Microsoft.AspNetCore.OpenApi >= 10.0.10",
+      "Microsoft.AspNetCore.OpenApi >= 10.0.11",
       "Microsoft.EntityFrameworkCore.Design >= 10.0.11"
     ]
   },
@@ -2717,11 +2717,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Api\\CartCompare.Api.csproj",
+      "projectUniqueName": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Api\\CartCompare.Api.csproj",
       "projectName": "CartCompare.Api",
-      "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Api\\CartCompare.Api.csproj",
+      "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Api\\CartCompare.Api.csproj",
       "packagesPath": "C:\\Users\\katel\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Api\\obj\\",
+      "outputPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Api\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\katel\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -2737,17 +2737,17 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "projectReferences": {
-            "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj": {
-              "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj"
+            "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj": {
+              "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj"
             },
-            "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Infrastructure\\CartCompare.Infrastructure.csproj": {
-              "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Infrastructure\\CartCompare.Infrastructure.csproj"
+            "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Infrastructure\\CartCompare.Infrastructure.csproj": {
+              "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Infrastructure\\CartCompare.Infrastructure.csproj"
             },
-            "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\CartCompare.Repositories.csproj": {
-              "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\CartCompare.Repositories.csproj"
+            "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\CartCompare.Repositories.csproj": {
+              "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\CartCompare.Repositories.csproj"
             },
-            "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Services\\CartCompare.Services.csproj": {
-              "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Services\\CartCompare.Services.csproj"
+            "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Services\\CartCompare.Services.csproj": {
+              "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Services\\CartCompare.Services.csproj"
             }
           }
         }
@@ -2775,7 +2775,7 @@
           },
           "Microsoft.AspNetCore.OpenApi": {
             "target": "Package",
-            "version": "[10.0.10, )"
+            "version": "[10.0.11, )"
           },
           "Microsoft.EntityFrameworkCore.Design": {
             "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
@@ -3220,17 +3220,5 @@
         }
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1903",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'Microsoft.OpenApi' 2.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-v5pm-xwqc-g5wc",
-      "libraryId": "Microsoft.OpenApi",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    }
-  ]
+  }
 }

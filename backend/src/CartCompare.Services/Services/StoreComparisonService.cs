@@ -96,7 +96,7 @@ public class StoreComparisonService : IStoreComparisonService
             var storeRetailerProducts =
                 retailerProducts
                     .Where(p =>
-                        p.RetailerId == store.RetailerId)
+                        p.RetailerId == store.RetailerId && p.IsActive)
                     .ToList();
 
             StoreComparisonItemResult?

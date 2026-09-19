@@ -7,4 +7,8 @@
     <Project Path="src/CartCompare.Repositories/CartCompare.Repositories.csproj" />
     <Project Path="src/CartCompare.Services/CartCompare.Services.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CartCompare.IntegrationTests/CartCompare.IntegrationTests.csproj" />
+    <Project Path="tests/CartCompare.Services.Tests/CartCompare.Services.Tests.csproj" />
+  </Folder>
 </Solution>

@@ -1248,11 +1248,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\CartCompare.Repositories.csproj",
+      "projectUniqueName": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\CartCompare.Repositories.csproj",
       "projectName": "CartCompare.Repositories",
-      "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\CartCompare.Repositories.csproj",
+      "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\CartCompare.Repositories.csproj",
       "packagesPath": "C:\\Users\\katel\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\obj\\",
+      "outputPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\katel\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -1268,11 +1268,11 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "projectReferences": {
-            "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj": {
-              "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj"
+            "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj": {
+              "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj"
             },
-            "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Infrastructure\\CartCompare.Infrastructure.csproj": {
-              "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Infrastructure\\CartCompare.Infrastructure.csproj"
+            "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Infrastructure\\CartCompare.Infrastructure.csproj": {
+              "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Infrastructure\\CartCompare.Infrastructure.csproj"
             }
           }
         }

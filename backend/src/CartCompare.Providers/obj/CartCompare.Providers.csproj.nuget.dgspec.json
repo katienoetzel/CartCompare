@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\CartCompare.Providers.csproj": {}
+    "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\CartCompare.Providers.csproj": {}
   },
   "projects": {
-    "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj": {
+    "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj",
+        "projectUniqueName": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj",
         "projectName": "CartCompare.Entities",
-        "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj",
+        "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj",
         "packagesPath": "C:\\Users\\katel\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\obj\\",
+        "outputPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\katel\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -345,14 +345,14 @@
         }
       }
     },
-    "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\CartCompare.Providers.csproj": {
+    "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\CartCompare.Providers.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\CartCompare.Providers.csproj",
+        "projectUniqueName": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\CartCompare.Providers.csproj",
         "projectName": "CartCompare.Providers",
-        "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\CartCompare.Providers.csproj",
+        "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\CartCompare.Providers.csproj",
         "packagesPath": "C:\\Users\\katel\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\obj\\",
+        "outputPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\katel\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -368,8 +368,8 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj": {
-                "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj"
+              "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj": {
+                "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj"
               }
             }
           }

@@ -2,6 +2,7 @@ using CartCompare.Api.Models.Requests;
 using CartCompare.Entities;
 using CartCompare.Services.Interfaces;
 using CartCompare.Services.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CartCompare.Api.Controllers;
@@ -25,6 +26,7 @@ public class RetailersController : ControllerBase
         return Ok(retailers);
     }
 
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> Create(CreateRetailerRequest request)
     {

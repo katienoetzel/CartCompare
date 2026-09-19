@@ -37,7 +37,7 @@ public class IntegrationsController : ControllerBase
 
     [HttpGet("kroger/stores")]
     public async Task<IActionResult> GetKrogerStores(
-    [FromQuery] string postalCode)
+    [FromQuery] string? postalCode)
     {
         if (string.IsNullOrWhiteSpace(postalCode))
         {
@@ -57,8 +57,8 @@ public class IntegrationsController : ControllerBase
     }
     [HttpGet("kroger/products")]
     public async Task<IActionResult> SearchKrogerProducts(
-    [FromQuery] string locationId,
-    [FromQuery] string query)
+    [FromQuery] string? locationId,
+    [FromQuery] string? query)
     {
         if (
             string.IsNullOrWhiteSpace(locationId) ||
@@ -82,8 +82,8 @@ public class IntegrationsController : ControllerBase
     }
     [HttpGet("kroger/price")]
     public async Task<IActionResult> GetKrogerPrice(
-    [FromQuery] string locationId,
-    [FromQuery] string productId)
+    [FromQuery] string? locationId,
+    [FromQuery] string? productId)
     {
         if (
             string.IsNullOrWhiteSpace(locationId) ||

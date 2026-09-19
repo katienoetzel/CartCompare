@@ -1,0 +1,8 @@
+{
+  "CartCompare.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Api",
+  "CartCompare.Entities, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities",
+  "CartCompare.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Infrastructure",
+  "CartCompare.Providers, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers",
+  "CartCompare.Repositories, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Repositories",
+  "CartCompare.Services, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Services"
+}

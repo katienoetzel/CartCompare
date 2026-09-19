@@ -254,9 +254,6 @@ public class CartCompareDbContext
         {
             entity.HasKey(g => g.Id);
 
-            entity.Property(g => g.Quantity)
-                .HasDefaultValue(1);
-
             entity.HasIndex(g => new
             {
                 g.UserId,

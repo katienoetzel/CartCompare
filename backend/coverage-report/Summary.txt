@@ -1,0 +1,131 @@
+Summary
+  Generated on: 9/17/2026 - 8:18:56 PM
+  Coverage date: 9/17/2026 - 7:27:51 PM - 9/17/2026 - 7:28:31 PM
+  Parser: MultiReport (2x Cobertura)
+  Assemblies: 6
+  Classes: 99
+  Files: 93
+  Line coverage: 90.8%
+  Covered lines: 6262
+  Uncovered lines: 627
+  Coverable lines: 6889
+  Total lines: 9737
+  Branch coverage: 54.4% (384 of 705)
+  Covered branches: 384
+  Total branches: 705
+  Method coverage: 94.2% (456 of 484)
+  Full method coverage: 86.3% (418 of 484)
+  Covered methods: 456
+  Fully covered methods: 418
+  Total methods: 484
+
+CartCompare.Api                                                                     70.5%
+  CartCompare.Api.Authentication.JwtTokenService                                     100%
+  CartCompare.Api.Controllers.AuthController                                         100%
+  CartCompare.Api.Controllers.ComparisonsController                                 92.3%
+  CartCompare.Api.Controllers.GroceryListController                                 90.7%
+  CartCompare.Api.Controllers.IntegrationsController                                 100%
+  CartCompare.Api.Controllers.ItemsController                                        100%
+  CartCompare.Api.Controllers.MembershipsController                                   89%
+  CartCompare.Api.Controllers.PricesController                                      92.7%
+  CartCompare.Api.Controllers.ProductCandidatesController                           90.7%
+  CartCompare.Api.Controllers.ProductSyncController                                 94.1%
+  CartCompare.Api.Controllers.RetailerProductsController                            94.9%
+  CartCompare.Api.Controllers.RetailersController                                    100%
+  CartCompare.Api.Controllers.SavedItemsController                                  90.2%
+  CartCompare.Api.Controllers.StoreLocationsController                                94%
+  CartCompare.Api.Controllers.StoreSyncController                                   97.7%
+  CartCompare.Api.Models.Requests.CompareStoresRequest                               100%
+  CartCompare.Api.Models.Requests.CreateItemRequest                                  100%
+  CartCompare.Api.Models.Requests.CreateRetailerProductRequest                       100%
+  CartCompare.Api.Models.Requests.CreateRetailerRequest                              100%
+  CartCompare.Api.Models.Requests.CreateStoreLocationRequest                         100%
+  CartCompare.Api.Models.Requests.LoginRequest                                       100%
+  CartCompare.Api.Models.Requests.RegisterRequest                                    100%
+  CartCompare.Api.Models.Requests.SetGroceryListQuantityRequest                      100%
+  CartCompare.Api.Models.Requests.SyncProductPriceRequest                            100%
+  CartCompare.Api.Models.Requests.SyncStoreLocationsRequest                          100%
+  CartCompare.Api.Models.Requests.UpsertPriceRequest                                 100%
+  CartCompare.Api.Models.Responses.AuthResponse                                      100%
+  CartCompare.Api.Models.Responses.GroceryListItemResponse                           100%
+  CartCompare.Api.Models.Responses.SavedItemResponse                                 100%
+  Microsoft.AspNetCore.OpenApi.Generated                                               1%
+  Program                                                                           99.2%
+  System.Runtime.CompilerServices                                                      0%
+
+CartCompare.Entities                                                                 100%
+  CartCompare.Entities.ApplicationUser                                               100%
+  CartCompare.Entities.GroceryListItem                                               100%
+  CartCompare.Entities.Item                                                          100%
+  CartCompare.Entities.Price                                                         100%
+  CartCompare.Entities.Retailer                                                      100%
+  CartCompare.Entities.RetailerProduct                                               100%
+  CartCompare.Entities.SavedItem                                                     100%
+  CartCompare.Entities.StoreLocation                                                 100%
+  CartCompare.Entities.UserRetailerMembership                                        100%
+
+CartCompare.Infrastructure                                                          95.1%
+  CartCompare.Infrastructure.Data.CartCompareDbContext                               100%
+  CartCompare.Infrastructure.Data.Migrations.CartCompareDbContextModelSnapshot       100%
+  CartCompare.Infrastructure.Data.Migrations.InitialCreate                          97.2%
+  CartCompare.Infrastructure.Data.Migrations.RemoveGroceryListQuantityDefault       98.6%
+  CartCompare.Infrastructure.Providers.Kroger.KrogerPriceProvider                   70.2%
+  CartCompare.Infrastructure.Providers.Kroger.KrogerTokenService                    87.1%
+  CartCompare.Infrastructure.Providers.Kroger.Models.KrogerAddress                   100%
+  CartCompare.Infrastructure.Providers.Kroger.Models.KrogerGeolocation               100%
+  CartCompare.Infrastructure.Providers.Kroger.Models.KrogerInventory                 100%
+  CartCompare.Infrastructure.Providers.Kroger.Models.KrogerItemPrice                 100%
+  CartCompare.Infrastructure.Providers.Kroger.Models.KrogerLocation                  100%
+  CartCompare.Infrastructure.Providers.Kroger.Models.KrogerLocationListResponse      100%
+  CartCompare.Infrastructure.Providers.Kroger.Models.KrogerProduct                   100%
+  CartCompare.Infrastructure.Providers.Kroger.Models.KrogerProductDetailsResponse    100%
+  CartCompare.Infrastructure.Providers.Kroger.Models.KrogerProductItem               100%
+  CartCompare.Infrastructure.Providers.Kroger.Models.KrogerProductListResponse       100%
+  CartCompare.Infrastructure.Providers.Kroger.Models.KrogerTokenResponse             100%
+  CartCompare.Infrastructure.Providers.PriceProviderResolver                         100%
+
+CartCompare.Providers                                                                100%
+  CartCompare.Providers.Models.ProviderPriceSnapshot                                 100%
+  CartCompare.Providers.Models.ProviderProduct                                       100%
+  CartCompare.Providers.Models.ProviderStoreLocation                                 100%
+
+CartCompare.Repositories                                                             100%
+  CartCompare.Repositories.Repositories.GroceryListRepository                        100%
+  CartCompare.Repositories.Repositories.ItemRepository                               100%
+  CartCompare.Repositories.Repositories.PriceRepository                              100%
+  CartCompare.Repositories.Repositories.RetailerProductRepository                    100%
+  CartCompare.Repositories.Repositories.RetailerRepository                           100%
+  CartCompare.Repositories.Repositories.SavedItemRepository                          100%
+  CartCompare.Repositories.Repositories.StoreLocationRepository                      100%
+  CartCompare.Repositories.Repositories.UserRetailerMembershipRepository             100%
+
+CartCompare.Services                                                                98.2%
+  CartCompare.Services.Models.AuthResult                                             100%
+  CartCompare.Services.Models.CreateRetailerProductResult                            100%
+  CartCompare.Services.Models.CreateStoreLocationResult                              100%
+  CartCompare.Services.Models.EffectivePriceResult                                   100%
+  CartCompare.Services.Models.GroceryListItemDetails                                 100%
+  CartCompare.Services.Models.MultiStoreComparisonResult                             100%
+  CartCompare.Services.Models.PriceUpsertResult                                      100%
+  CartCompare.Services.Models.ProductCandidate                                       100%
+  CartCompare.Services.Models.ProductCandidateSearchResult                           100%
+  CartCompare.Services.Models.ProductMatchResult                                     100%
+  CartCompare.Services.Models.ProductPriceSyncResult                                 100%
+  CartCompare.Services.Models.SavedItemDetails                                       100%
+  CartCompare.Services.Models.StoreComparisonItemResult                              100%
+  CartCompare.Services.Models.StoreComparisonResult                                  100%
+  CartCompare.Services.Models.StoreLocationSyncResult                                100%
+  CartCompare.Services.Services.AuthService                                         79.6%
+  CartCompare.Services.Services.GroceryListService                                    98%
+  CartCompare.Services.Services.ItemService                                          100%
+  CartCompare.Services.Services.PriceService                                         100%
+  CartCompare.Services.Services.ProductCandidateService                              100%
+  CartCompare.Services.Services.ProductMatchingService                               100%
+  CartCompare.Services.Services.ProductPriceSyncService                              100%
+  CartCompare.Services.Services.RetailerProductService                               100%
+  CartCompare.Services.Services.RetailerService                                      100%
+  CartCompare.Services.Services.SavedItemService                                    97.4%
+  CartCompare.Services.Services.StoreComparisonService                                93%
+  CartCompare.Services.Services.StoreLocationService                                 100%
+  CartCompare.Services.Services.StoreLocationSyncService                             100%
+  CartCompare.Services.Services.UserRetailerMembershipService                        100%

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "jTQs/SI9NUI=",
+  "dgSpecHash": "rRTUTJsNUL4=",
   "success": true,
-  "projectFilePath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Services\\CartCompare.Services.csproj",
+  "projectFilePath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Services\\CartCompare.Services.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.aspnetcore.cryptography.internal\\10.0.11\\microsoft.aspnetcore.cryptography.internal.10.0.11.nupkg.sha512",
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.aspnetcore.cryptography.keyderivation\\10.0.11\\microsoft.aspnetcore.cryptography.keyderivation.10.0.11.nupkg.sha512",

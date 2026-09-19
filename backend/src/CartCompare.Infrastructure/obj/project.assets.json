@@ -3201,11 +3201,11 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "projectReferences": {
-            "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj": {
-              "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj"
+            "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj": {
+              "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Entities\\CartCompare.Entities.csproj"
             },
-            "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\CartCompare.Providers.csproj": {
-              "projectPath": "C:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\CartCompare.Providers.csproj"
+            "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\CartCompare.Providers.csproj": {
+              "projectPath": "c:\\Users\\katel\\git\\CartCompare\\backend\\src\\CartCompare.Providers\\CartCompare.Providers.csproj"
             }
           }
         }
