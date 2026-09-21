@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CartCompare.Entities")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+94bc92eda74e1d95300503e37aa7c4d8ab8bf3e8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c90c22700112abfa9729ecedacfd2082c03e2f10")]
 [assembly: System.Reflection.AssemblyProductAttribute("CartCompare.Entities")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CartCompare.Entities")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

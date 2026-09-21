@@ -1,6 +1,7 @@
 using CartCompare.Api.Models.Requests;
 using CartCompare.Services.Interfaces;
 using CartCompare.Services.Models;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,14 +17,19 @@ public class RetailerProductsController : ControllerBase
     public RetailerProductsController(
         IRetailerProductService retailerProductService)
     {
-        _retailerProductService = retailerProductService;
+        _retailerProductService =
+            retailerProductService;
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(
+        int id)
     {
         var product =
-            await _retailerProductService.GetByIdAsync(id);
+            await _retailerProductService
+                .GetByIdAsync(
+                    id
+                );
 
         if (product is null)
         {
@@ -39,7 +45,9 @@ public class RetailerProductsController : ControllerBase
     {
         var products =
             await _retailerProductService
-                .GetByRetailerIdAsync(retailerId);
+                .GetByRetailerIdAsync(
+                    retailerId
+                );
 
         return Ok(products);
     }
@@ -50,48 +58,58 @@ public class RetailerProductsController : ControllerBase
     {
         var products =
             await _retailerProductService
-                .GetByItemIdAsync(itemId);
+                .GetByItemIdAsync(
+                    itemId
+                );
 
         return Ok(products);
     }
 
-    [Authorize]
+    [Authorize(Policy = "AdminOnly")]
     [HttpPost]
     public async Task<IActionResult> Create(
         CreateRetailerProductRequest request)
     {
         var result =
-            await _retailerProductService.CreateAsync(
-                request.ItemId,
-                request.RetailerId,
-                request.ExternalProductId,
-                request.Name,
-                request.Brand,
-                request.Size,
-                request.Upc
-            );
+            await _retailerProductService
+                .CreateAsync(
+                    request.ItemId,
+                    request.RetailerId,
+                    request.ExternalProductId,
+                    request.Name,
+                    request.Brand,
+                    request.Size,
+                    request.Upc
+                );
 
         return result.Result switch
         {
-            RetailerProductCreateResult.Created =>
+            RetailerProductCreateResult
+                .Created =>
                 Ok(result.RetailerProduct),
 
-            RetailerProductCreateResult.AlreadyExists =>
+            RetailerProductCreateResult
+                .AlreadyExists =>
                 Ok(result.RetailerProduct),
 
-            RetailerProductCreateResult.RetailerNotFound =>
+            RetailerProductCreateResult
+                .RetailerNotFound =>
                 NotFound(new
                 {
-                    message = "Retailer not found."
+                    message =
+                        "Retailer not found."
                 }),
 
-            RetailerProductCreateResult.ItemNotFound =>
+            RetailerProductCreateResult
+                .ItemNotFound =>
                 NotFound(new
                 {
-                    message = "Item not found."
+                    message =
+                        "Item not found."
                 }),
 
-            _ => StatusCode(500)
+            _ =>
+                StatusCode(500)
         };
     }
 }

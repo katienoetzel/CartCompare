@@ -1,5 +1,6 @@
 using CartCompare.Services.Interfaces;
 using CartCompare.Services.Models;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,7 +8,7 @@ namespace CartCompare.Api.Controllers;
 
 [ApiController]
 [Route("api/product-candidates")]
-[Authorize]
+[Authorize(Policy = "AdminOnly")]
 public class ProductCandidatesController
     : ControllerBase
 {
@@ -29,7 +30,8 @@ public class ProductCandidatesController
     {
         if (
             itemId <= 0 ||
-            storeLocationId <= 0)
+            storeLocationId <= 0
+        )
         {
             return BadRequest(new
             {

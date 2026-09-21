@@ -1,8 +1,11 @@
 using System.Text;
+
 using CartCompare.Infrastructure.Data;
 using CartCompare.IntegrationTests.Fakes;
 using CartCompare.Providers.Interfaces;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
+
 using Npgsql;
 
 namespace CartCompare.IntegrationTests.Fixtures;
@@ -26,8 +30,14 @@ public class CartCompareWebApplicationFactory
     private const string TestJwtAudience =
         "CartCompare.IntegrationTests";
 
+    public const string TestAdminEmail =
+        "cartcompare-admin@example.com";
+
     private readonly string
         _connectionString;
+
+    private readonly bool
+        _strictAdminAuthorization;
 
     public FakePriceProvider
         TestPriceProvider
@@ -40,7 +50,8 @@ public class CartCompareWebApplicationFactory
             new();
 
     public CartCompareWebApplicationFactory(
-        string connectionString)
+        string connectionString,
+        bool strictAdminAuthorization = false)
     {
         ValidateTestDatabase(
             connectionString
@@ -48,6 +59,9 @@ public class CartCompareWebApplicationFactory
 
         _connectionString =
             connectionString;
+
+        _strictAdminAuthorization =
+            strictAdminAuthorization;
     }
 
     protected override void ConfigureWebHost(
@@ -78,6 +92,11 @@ public class CartCompareWebApplicationFactory
                             "Jwt:Audience"
                         ] =
                             TestJwtAudience,
+
+                        [
+                            "Admin:Email"
+                        ] =
+                            TestAdminEmail,
 
                         [
                             "Kroger:ClientId"
@@ -236,6 +255,42 @@ public class CartCompareWebApplicationFactory
                             };
                     }
                 );
+
+                // -----------------------------------------
+                // Admin authorization
+                //
+                // Most existing API tests are testing
+                // controller/service behavior rather than
+                // administrator permissions.
+                //
+                // In normal test-factory mode, AdminOnly
+                // therefore requires authentication but
+                // does not require the special admin email.
+                //
+                // Dedicated security tests use
+                // strictAdminAuthorization = true so that
+                // the REAL AdminOnly policy configured in
+                // Program.cs is exercised.
+                // -----------------------------------------
+
+                if (!_strictAdminAuthorization)
+                {
+                    services.PostConfigure<
+                        AuthorizationOptions
+                    >(
+                        options =>
+                        {
+                            options.AddPolicy(
+                                "AdminOnly",
+                                policy =>
+                                {
+                                    policy
+                                        .RequireAuthenticatedUser();
+                                }
+                            );
+                        }
+                    );
+                }
             }
         );
     }

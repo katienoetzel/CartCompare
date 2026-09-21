@@ -1,6 +1,7 @@
 using CartCompare.Api.Models.Requests;
 using CartCompare.Services.Interfaces;
 using CartCompare.Services.Models;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,7 @@ namespace CartCompare.Api.Controllers;
 
 [ApiController]
 [Route("api/store-sync")]
-[Authorize]
+[Authorize(Policy = "AdminOnly")]
 public class StoreSyncController : ControllerBase
 {
     private readonly IStoreLocationSyncService
@@ -29,7 +30,8 @@ public class StoreSyncController : ControllerBase
             request.RetailerId <= 0 ||
             string.IsNullOrWhiteSpace(
                 request.PostalCode
-            ))
+            )
+        )
         {
             return BadRequest(new
             {
@@ -39,30 +41,36 @@ public class StoreSyncController : ControllerBase
         }
 
         var result =
-            await _storeLocationSyncService.SyncAsync(
-                request.RetailerId,
-                request.PostalCode
-            );
+            await _storeLocationSyncService
+                .SyncAsync(
+                    request.RetailerId,
+                    request.PostalCode
+                );
 
         return result.Result switch
         {
-            StoreLocationSyncResultType.Succeeded =>
+            StoreLocationSyncResultType
+                .Succeeded =>
                 Ok(result),
 
-            StoreLocationSyncResultType.RetailerNotFound =>
+            StoreLocationSyncResultType
+                .RetailerNotFound =>
                 NotFound(new
                 {
-                    message = "Retailer not found."
+                    message =
+                        "Retailer not found."
                 }),
 
-            StoreLocationSyncResultType.ProviderNotFound =>
+            StoreLocationSyncResultType
+                .ProviderNotFound =>
                 BadRequest(new
                 {
                     message =
                         "No price provider supports this retailer."
                 }),
 
-            _ => StatusCode(500)
+            _ =>
+                StatusCode(500)
         };
     }
 }

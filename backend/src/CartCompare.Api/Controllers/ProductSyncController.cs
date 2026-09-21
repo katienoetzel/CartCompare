@@ -1,6 +1,7 @@
 using CartCompare.Api.Models.Requests;
 using CartCompare.Services.Interfaces;
 using CartCompare.Services.Models;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,7 @@ namespace CartCompare.Api.Controllers;
 
 [ApiController]
 [Route("api/product-sync")]
-[Authorize]
+[Authorize(Policy = "AdminOnly")]
 public class ProductSyncController : ControllerBase
 {
     private readonly IProductPriceSyncService
@@ -30,7 +31,8 @@ public class ProductSyncController : ControllerBase
             request.StoreLocationId <= 0 ||
             string.IsNullOrWhiteSpace(
                 request.ExternalProductId
-            ))
+            )
+        )
         {
             return BadRequest(new
             {
@@ -40,21 +42,25 @@ public class ProductSyncController : ControllerBase
         }
 
         var result =
-            await _productPriceSyncService.SyncAsync(
-                request.ItemId,
-                request.StoreLocationId,
-                request.ExternalProductId
-            );
+            await _productPriceSyncService
+                .SyncAsync(
+                    request.ItemId,
+                    request.StoreLocationId,
+                    request.ExternalProductId
+                );
 
         return result.Result switch
         {
-            ProductPriceSyncResultType.Succeeded =>
+            ProductPriceSyncResultType
+                .Succeeded =>
                 Ok(result),
 
-            ProductPriceSyncResultType.ItemNotFound =>
+            ProductPriceSyncResultType
+                .ItemNotFound =>
                 NotFound(new
                 {
-                    message = "Item not found."
+                    message =
+                        "Item not found."
                 }),
 
             ProductPriceSyncResultType
@@ -65,13 +71,16 @@ public class ProductSyncController : ControllerBase
                         "Store location not found."
                 }),
 
-            ProductPriceSyncResultType.RetailerNotFound =>
+            ProductPriceSyncResultType
+                .RetailerNotFound =>
                 NotFound(new
                 {
-                    message = "Retailer not found."
+                    message =
+                        "Retailer not found."
                 }),
 
-            ProductPriceSyncResultType.ProviderNotFound =>
+            ProductPriceSyncResultType
+                .ProviderNotFound =>
                 BadRequest(new
                 {
                     message =
@@ -100,7 +109,10 @@ public class ProductSyncController : ControllerBase
 
             ProductPriceSyncResultType
                 .PriceSyncFailed =>
-                StatusCode(500, result),
+                StatusCode(
+                    500,
+                    result
+                ),
 
             _ =>
                 StatusCode(500)

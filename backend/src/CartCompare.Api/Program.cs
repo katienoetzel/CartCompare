@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 
 using CartCompare.Api.Authentication;
@@ -12,13 +13,17 @@ using CartCompare.Services.Interfaces;
 using CartCompare.Services.Services;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ==================================================
+// Controllers
+// ==================================================
+
 builder.Services.AddControllers();
 
 
@@ -115,7 +120,66 @@ builder.Services
             };
     });
 
-builder.Services.AddAuthorization();
+
+// ==================================================
+// Authorization
+// ==================================================
+
+builder.Services
+    .AddAuthorizationBuilder()
+    .AddPolicy(
+        "AdminOnly",
+        policy =>
+        {
+            policy.RequireAuthenticatedUser();
+
+            policy.RequireAssertion(
+                context =>
+                {
+                    if (
+                        context.Resource
+                        is not HttpContext httpContext
+                    )
+                    {
+                        return false;
+                    }
+
+                    var configuration =
+                        httpContext.RequestServices
+                            .GetRequiredService<
+                                IConfiguration
+                            >();
+
+                    var adminEmail =
+                        configuration[
+                            "Admin:Email"
+                        ];
+
+                    if (
+                        string.IsNullOrWhiteSpace(
+                            adminEmail
+                        )
+                    )
+                    {
+                        return false;
+                    }
+
+                    return context.User.Claims.Any(
+                        claim =>
+                            claim.Type ==
+                                ClaimTypes.Email
+                            &&
+                            string.Equals(
+                                claim.Value,
+                                adminEmail,
+                                StringComparison
+                                    .OrdinalIgnoreCase
+                            )
+                    );
+                }
+            );
+        }
+    );
 
 
 // ==================================================
