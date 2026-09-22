@@ -346,6 +346,13 @@ builder.Services.AddOpenApi();
 
 
 // ==================================================
+// Health checks
+// ==================================================
+
+builder.Services.AddHealthChecks();
+
+
+// ==================================================
 // CORS
 // ==================================================
 
@@ -463,6 +470,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHealthChecks("/health");
 
 app.MapControllers();
 
