@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "PO3GWdGpgHE=",
+  "dgSpecHash": "nPYxBb0LItY=",
   "success": true,
-  "projectFilePath": "C:\\Users\\katel\\git\\CartCompare\\backend\\tests\\CartCompare.IntegrationTests\\CartCompare.IntegrationTests.csproj",
+  "projectFilePath": "c:\\Users\\katel\\git\\CartCompare\\backend\\tests\\CartCompare.IntegrationTests\\CartCompare.IntegrationTests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\katel\\.nuget\\packages\\coverlet.collector\\6.0.4\\coverlet.collector.6.0.4.nupkg.sha512",
     "C:\\Users\\katel\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\10.0.11\\microsoft.aspnetcore.authentication.jwtbearer.10.0.11.nupkg.sha512",

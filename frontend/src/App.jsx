@@ -35,10 +35,6 @@ import {
 import "./App.css";
 
 function App() {
-  // -----------------------------------------
-  // General application data
-  // -----------------------------------------
-
   const [retailers, setRetailers] =
     useState([]);
 
@@ -55,10 +51,6 @@ function App() {
     comparisonResult,
     setComparisonResult,
   ] = useState(null);
-
-  // -----------------------------------------
-  // Authentication state
-  // -----------------------------------------
 
   const [loggedIn, setLoggedIn] =
     useState(isLoggedIn());
@@ -78,16 +70,8 @@ function App() {
   const [password, setPassword] =
     useState("");
 
-  // -----------------------------------------
-  // Grocery-list state
-  // -----------------------------------------
-
   const [quantities, setQuantities] =
     useState({});
-
-  // -----------------------------------------
-  // Store-selection state
-  // -----------------------------------------
 
   const [
     selectedRetailerId,
@@ -99,10 +83,6 @@ function App() {
     setSelectedStoreIds,
   ] = useState([]);
 
-  // -----------------------------------------
-  // UI feedback
-  // -----------------------------------------
-
   const [message, setMessage] =
     useState("");
 
@@ -111,10 +91,6 @@ function App() {
 
   const [isComparing, setIsComparing] =
     useState(false);
-
-  // -----------------------------------------
-  // Load public application data
-  // -----------------------------------------
 
   useEffect(() => {
     async function loadInitialData() {
@@ -137,46 +113,34 @@ function App() {
     loadInitialData();
   }, []);
 
-  // -----------------------------------------
-  // Load user's grocery list after login
-  // -----------------------------------------
+  useEffect(() => {
+    if (!loggedIn) {
+      return;
+    }
+
+    refreshGroceryList();
+  }, [loggedIn]);
 
   useEffect(() => {
-  if (!loggedIn) {
-    return;
-  }
-
-  refreshGroceryList();
-}, [loggedIn]);
-
-  // -----------------------------------------
-  // Load stores when retailer changes
-  // -----------------------------------------
-
-useEffect(() => {
-  if (!selectedRetailerId) {
-    return;
-  }
-
-  async function loadStores() {
-    try {
-      const data =
-        await getStoresByRetailer(
-          selectedRetailerId
-        );
-
-      setStores(data);
-    } catch (err) {
-      setError(err.message);
+    if (!selectedRetailerId) {
+      return;
     }
-  }
 
-  loadStores();
-}, [selectedRetailerId]);
+    async function loadStores() {
+      try {
+        const data =
+          await getStoresByRetailer(
+            selectedRetailerId
+          );
 
-  // -----------------------------------------
-  // Grocery-list refresh helper
-  // -----------------------------------------
+        setStores(data);
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+
+    loadStores();
+  }, [selectedRetailerId]);
 
   async function refreshGroceryList() {
     try {
@@ -188,10 +152,6 @@ useEffect(() => {
       setError(err.message);
     }
   }
-
-  // -----------------------------------------
-  // Authentication
-  // -----------------------------------------
 
   async function handleAuthSubmit(
     event
@@ -253,22 +213,18 @@ useEffect(() => {
   }
 
   function handleRetailerChange(event) {
-  const retailerId =
-    event.target.value;
+    const retailerId =
+      event.target.value;
 
-  setSelectedRetailerId(
-    retailerId
-  );
+    setSelectedRetailerId(
+      retailerId
+    );
 
-  setStores([]);
-  setSelectedStoreIds([]);
-  setComparisonResult(null);
-  setError("");
-}
-
-  // -----------------------------------------
-  // Grocery list
-  // -----------------------------------------
+    setStores([]);
+    setSelectedStoreIds([]);
+    setComparisonResult(null);
+    setError("");
+  }
 
   function handleQuantityChange(
     itemId,
@@ -342,10 +298,6 @@ useEffect(() => {
     }
   }
 
-  // -----------------------------------------
-  // Store selection
-  // -----------------------------------------
-
   function handleStoreToggle(
     storeId
   ) {
@@ -368,10 +320,6 @@ useEffect(() => {
 
     setComparisonResult(null);
   }
-
-  // -----------------------------------------
-  // Compare stores
-  // -----------------------------------------
 
   async function handleCompare() {
     if (
@@ -410,582 +358,823 @@ useEffect(() => {
     }
   }
 
-  // -----------------------------------------
-  // Render
-  // -----------------------------------------
-
   return (
-    <main>
-      <h1>CartCompare</h1>
-
-      <p>
-        Compare grocery prices
-        across physical stores.
-      </p>
-
-      {error && (
-        <p>
-          Error: {error}
-        </p>
-      )}
-
-      {message && (
-        <p>{message}</p>
-      )}
-
-      {!loggedIn ? (
-        <section>
-          <h2>
-            {authMode === "login"
-              ? "Login"
-              : "Create Account"}
-          </h2>
-
-          <form
-            onSubmit={
-              handleAuthSubmit
-            }
-          >
-            {authMode ===
-              "register" && (
-              <>
-                <div>
-                  <label>
-                    First name
-                    <input
-                      type="text"
-                      value={
-                        firstName
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        setFirstName(
-                          event
-                            .target
-                            .value
-                        )
-                      }
-                      required
-                    />
-                  </label>
-                </div>
-
-                <div>
-                  <label>
-                    Last name
-                    <input
-                      type="text"
-                      value={
-                        lastName
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        setLastName(
-                          event
-                            .target
-                            .value
-                        )
-                      }
-                      required
-                    />
-                  </label>
-                </div>
-              </>
-            )}
-
-            <div>
-              <label>
-                Email
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(
-                    event
-                  ) =>
-                    setEmail(
-                      event
-                        .target
-                        .value
-                    )
-                  }
-                  required
-                />
-              </label>
+    <div className="app-shell">
+      <header className="site-header">
+        <div className="header-inner">
+          <div className="brand">
+            <div
+              className="brand-mark"
+              aria-hidden="true"
+            >
+              C
             </div>
 
             <div>
-              <label>
-                Password
-                <input
-                  type="password"
-                  value={
-                    password
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setPassword(
-                      event
-                        .target
-                        .value
-                    )
-                  }
-                  required
-                />
-              </label>
+              <h1>
+                CartCompare
+              </h1>
+
+              <p className="brand-tagline">
+                Compare grocery prices
+                across physical stores.
+              </p>
             </div>
+          </div>
 
-            <button
-              type="submit"
-            >
-              {authMode ===
-              "login"
-                ? "Login"
-                : "Register"}
-            </button>
-          </form>
+          {loggedIn && (
+            <section className="account-area">
+              <h2 className="sr-only">
+                Account
+              </h2>
 
-          <button
-            type="button"
-            onClick={() => {
-              setAuthMode(
-                authMode ===
-                  "login"
-                  ? "register"
-                  : "login"
-              );
+              <span className="account-status">
+                You are logged in.
+              </span>
 
-              setError("");
-              setMessage("");
-            }}
-          >
-            {authMode ===
-            "login"
-              ? "Need an account?"
-              : "Already have an account?"}
-          </button>
-        </section>
-      ) : (
-        <>
-          <section>
-            <h2>Account</h2>
-
-            <p>
-              You are logged in.
-            </p>
-
-            <button
-              type="button"
-              onClick={
-                handleLogout
-              }
-            >
-              Logout
-            </button>
-          </section>
-
-          <section>
-            <h2>
-              Grocery Items
-            </h2>
-
-            {items.length ===
-            0 ? (
-              <p>
-                No items found.
-              </p>
-            ) : (
-              <ul>
-                {items.map(
-                  (item) => (
-                    <li
-                      key={
-                        item.id
-                      }
-                    >
-                      <strong>
-                        {
-                          item.name
-                        }
-                      </strong>
-
-                      {item.brand &&
-                        ` — ${item.brand}`}
-
-                      {item.size &&
-                        ` — ${item.size}`}
-
-                      <div>
-                        <label>
-                          Quantity{" "}
-                          <input
-                            type="number"
-                            min="1"
-                            value={
-                              quantities[
-                                item
-                                  .id
-                              ] ??
-                              1
-                            }
-                            onChange={(
-                              event
-                            ) =>
-                              handleQuantityChange(
-                                item.id,
-                                event
-                                  .target
-                                  .value
-                              )
-                            }
-                          />
-                        </label>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleAddItem(
-                              item.id
-                            )
-                          }
-                        >
-                          Add / Update
-                        </button>
-                      </div>
-                    </li>
-                  )
-                )}
-              </ul>
-            )}
-          </section>
-
-          <section>
-            <h2>
-              My Grocery List
-            </h2>
-
-            {groceryList.length ===
-            0 ? (
-              <p>
-                Your grocery list
-                is empty.
-              </p>
-            ) : (
-              <ul>
-                {groceryList.map(
-                  (listItem) => (
-                    <li
-                      key={
-                        listItem.id
-                      }
-                    >
-                      <strong>
-                        {
-                          listItem.name
-                        }
-                      </strong>
-
-                      {listItem.size &&
-                        ` — ${listItem.size}`}
-
-                      {" — "}
-                      Quantity:{" "}
-                      {
-                        listItem.quantity
-                      }
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleRemoveItem(
-                            listItem.itemId
-                          )
-                        }
-                      >
-                        Remove
-                      </button>
-                    </li>
-                  )
-                )}
-              </ul>
-            )}
-          </section>
-
-          <section>
-            <h2>
-              Choose Stores
-            </h2>
-
-            <label>
-              Retailer{" "}
-              <select
-                value={
-                  selectedRetailerId
-                }
-                onChange={
-  handleRetailerChange
-}
-                
+              <button
+                className="button button-secondary"
+                type="button"
+                onClick={handleLogout}
               >
-                <option value="">
-                  Select a
-                  retailer
-                </option>
+                Logout
+              </button>
+            </section>
+          )}
+        </div>
+      </header>
 
-                {retailers.map(
-                  (retailer) => (
-                    <option
-                      key={
-                        retailer.id
-                      }
-                      value={
-                        retailer.id
-                      }
-                    >
-                      {
-                        retailer.name
-                      }
-                    </option>
-                  )
-                )}
-              </select>
-            </label>
+      <main className="page-content">
+        {error && (
+          <div
+            className="alert alert-error"
+            role="alert"
+          >
+            {`Error: ${error}`}
+          </div>
+        )}
 
-            {selectedRetailerId &&
-              stores.length ===
-                0 && (
-                <p>
-                  No stores found
-                  for this
-                  retailer.
-                </p>
-              )}
+        {message && (
+          <div
+            className="alert alert-success"
+            role="status"
+          >
+            {message}
+          </div>
+        )}
 
-            {stores.length >
-              0 && (
-              <div>
-                {stores.map(
-                  (store) => (
-                    <div
-                      key={
-                        store.id
-                      }
-                    >
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={selectedStoreIds.includes(
-                            store.id
-                          )}
-                          onChange={() =>
-                            handleStoreToggle(
-                              store.id
-                            )
-                          }
-                        />
+        {!loggedIn ? (
+          <div className="auth-layout">
+            <section className="auth-intro">
+              <p className="eyebrow">
+                Shop smarter
+              </p>
 
-                        {" "}
-
-                        {store.name ??
-                          "Store"}
-
-                        {" — "}
-
-                        {
-                          store.addressLine1
-                        }
-
-                        {", "}
-
-                        {
-                          store.city
-                        }
-
-                        {", "}
-
-                        {
-                          store.state
-                        }
-
-                        {" "}
-
-                        {
-                          store.postalCode
-                        }
-                      </label>
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-
-            <p>
-              Selected stores:{" "}
-              {
-                selectedStoreIds.length
-              }
-            </p>
-
-            <button
-              type="button"
-              disabled={
-                isComparing ||
-                selectedStoreIds.length ===
-                  0
-              }
-              onClick={
-                handleCompare
-              }
-            >
-              {isComparing
-                ? "Comparing..."
-                : "Compare Stores"}
-            </button>
-          </section>
-
-          {comparisonResult && (
-            <section>
               <h2>
-                Comparison Results
+                Spend less time checking
+                prices store by store.
               </h2>
 
               <p>
-                Complete stores:{" "}
-                {
-                  comparisonResult.completeStoreCount
-                }
+                Build a grocery list,
+                choose nearby stores, and
+                compare the total cost in
+                one place.
               </p>
 
-              <p>
-                Incomplete stores:{" "}
-                {
-                  comparisonResult.incompleteStoreCount
-                }
+              <div className="auth-feature-list">
+                <div>
+                  <span aria-hidden="true">
+                    ✓
+                  </span>
+                  Compare physical store
+                  pricing
+                </div>
+
+                <div>
+                  <span aria-hidden="true">
+                    ✓
+                  </span>
+                  See incomplete pricing
+                  clearly
+                </div>
+
+                <div>
+                  <span aria-hidden="true">
+                    ✓
+                  </span>
+                  Rank stores by your
+                  grocery total
+                </div>
+              </div>
+            </section>
+
+            <section className="auth-card">
+              <p className="eyebrow">
+                Welcome
               </p>
 
-              {comparisonResult
-                .missingStoreLocationIds
-                ?.length >
-                0 && (
-                <p>
-                  Some selected
-                  store IDs no
-                  longer exist:{" "}
-                  {comparisonResult.missingStoreLocationIds.join(
-                    ", "
-                  )}
-                </p>
-              )}
+              <h2>
+                {authMode === "login"
+                  ? "Login"
+                  : "Create Account"}
+              </h2>
 
-              {comparisonResult.stores.map(
-                (store) => (
-                  <article
-                    key={
-                      store.storeLocationId
-                    }
-                  >
-                    <h3>
-                      {store.rank
-                        ? `#${store.rank} `
-                        : ""}
+              <form
+                className="auth-form"
+                onSubmit={
+                  handleAuthSubmit
+                }
+              >
+                {authMode ===
+                  "register" && (
+                  <div className="form-row">
+                    <label className="field">
+                      <span>
+                        First name
+                      </span>
 
-                      {
-                        store.storeName
-                      }
-                    </h3>
-
-                    <p>
-                      Known subtotal:{" "}
-                      $
-                      {Number(
-                        store.knownSubtotal
-                      ).toFixed(
-                        2
-                      )}
-                    </p>
-
-                    <p>
-                      Status:{" "}
-                      {store.isComplete
-                        ? "Complete"
-                        : "Incomplete"}
-                    </p>
-
-                    {!store.isComplete && (
-                      <p>
-                        Missing items:{" "}
-                        {
-                          store.missingItemCount
+                      <input
+                        type="text"
+                        value={
+                          firstName
                         }
-                      </p>
-                    )}
+                        onChange={(
+                          event
+                        ) =>
+                          setFirstName(
+                            event.target
+                              .value
+                          )
+                        }
+                        required
+                      />
+                    </label>
 
-                    <ul>
-                      {store.items.map(
-                        (
-                          resultItem
-                        ) => (
-                          <li
-                            key={
-                              resultItem.itemId
-                            }
-                          >
+                    <label className="field">
+                      <span>
+                        Last name
+                      </span>
+
+                      <input
+                        type="text"
+                        value={
+                          lastName
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setLastName(
+                            event.target
+                              .value
+                          )
+                        }
+                        required
+                      />
+                    </label>
+                  </div>
+                )}
+
+                <label className="field">
+                  <span>Email</span>
+
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(
+                      event
+                    ) =>
+                      setEmail(
+                        event.target
+                          .value
+                      )
+                    }
+                    required
+                  />
+                </label>
+
+                <label className="field">
+                  <span>Password</span>
+
+                  <input
+                    type="password"
+                    value={
+                      password
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setPassword(
+                        event.target
+                          .value
+                      )
+                    }
+                    required
+                  />
+                </label>
+
+                <button
+                  className="button button-primary button-full"
+                  type="submit"
+                >
+                  {authMode ===
+                  "login"
+                    ? "Login"
+                    : "Register"}
+                </button>
+              </form>
+
+              <button
+                className="auth-switch"
+                type="button"
+                onClick={() => {
+                  setAuthMode(
+                    authMode ===
+                      "login"
+                      ? "register"
+                      : "login"
+                  );
+
+                  setError("");
+                  setMessage("");
+                }}
+              >
+                {authMode ===
+                "login"
+                  ? "Need an account?"
+                  : "Already have an account?"}
+              </button>
+            </section>
+          </div>
+        ) : (
+          <div className="dashboard">
+            <section className="dashboard-intro">
+              <div>
+                <p className="eyebrow">
+                  Grocery dashboard
+                </p>
+
+                <h2>
+                  Build your list and
+                  compare stores.
+                </h2>
+
+                <p>
+                  Add what you need,
+                  select the stores you
+                  want to check, then let
+                  CartCompare rank the
+                  results.
+                </p>
+              </div>
+
+              <div className="dashboard-stat">
+                <span>
+                  Items on your list
+                </span>
+
+                <strong>
+                  {groceryList.length}
+                </strong>
+              </div>
+            </section>
+
+            <div className="dashboard-grid">
+              <section className="panel">
+                <div className="panel-heading">
+                  <div>
+                    <p className="eyebrow">
+                      Step 1
+                    </p>
+
+                    <h2>
+                      Grocery Items
+                    </h2>
+                  </div>
+                </div>
+
+                {items.length === 0 ? (
+                  <p className="empty-state">
+                    No items found.
+                  </p>
+                ) : (
+                  <div className="item-list">
+                    {items.map(
+                      (item) => (
+                        <article
+                          className="item-card"
+                          key={item.id}
+                        >
+                          <div className="item-info">
+                            <div className="item-icon">
+                              <span aria-hidden="true">
+                                🛒
+                              </span>
+                            </div>
+
+                            <div>
+                              <h3>
+                                {
+                                  item.name
+                                }
+                              </h3>
+
+                              <p>
+                                {item.brand &&
+                                  `${item.brand} · `}
+
+                                {item.size ??
+                                  "Size not listed"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="item-actions">
+                            <label className="quantity-field">
+                              <span>
+                                Quantity
+                              </span>
+
+                              <input
+                                type="number"
+                                min="1"
+                                value={
+                                  quantities[
+                                    item.id
+                                  ] ?? 1
+                                }
+                                onChange={(
+                                  event
+                                ) =>
+                                  handleQuantityChange(
+                                    item.id,
+                                    event
+                                      .target
+                                      .value
+                                  )
+                                }
+                              />
+                            </label>
+
+                            <button
+                              className="button button-primary"
+                              type="button"
+                              onClick={() =>
+                                handleAddItem(
+                                  item.id
+                                )
+                              }
+                            >
+                              Add / Update
+                            </button>
+                          </div>
+                        </article>
+                      )
+                    )}
+                  </div>
+                )}
+              </section>
+
+              <section className="panel grocery-list-panel">
+                <div className="panel-heading">
+                  <div>
+                    <p className="eyebrow">
+                      Your cart
+                    </p>
+
+                    <h2>
+                      My Grocery List
+                    </h2>
+                  </div>
+
+                  <span className="count-badge">
+                    {
+                      groceryList.length
+                    }
+                  </span>
+                </div>
+
+                {groceryList.length ===
+                0 ? (
+                  <div className="empty-state">
+                    <p>
+                      Your grocery list
+                      is empty.
+                    </p>
+
+                    <span>
+                      Add an item to get
+                      started.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="grocery-list">
+                    {groceryList.map(
+                      (listItem) => (
+                        <div
+                          className="grocery-list-row"
+                          key={
+                            listItem.id
+                          }
+                        >
+                          <div>
                             <strong>
                               {
-                                resultItem.itemName
+                                listItem.name
                               }
                             </strong>
 
-                            {" — "}
+                            <p>
+                              {listItem.size &&
+                                `${listItem.size} · `}
 
-                            Qty{" "}
-                            {
-                              resultItem.quantity
+                              Quantity:{" "}
+                              {
+                                listItem.quantity
+                              }
+                            </p>
+                          </div>
+
+                          <button
+                            className="button-link button-danger"
+                            type="button"
+                            onClick={() =>
+                              handleRemoveItem(
+                                listItem.itemId
+                              )
                             }
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+              </section>
+            </div>
 
-                            {resultItem.isAvailable ? (
-                              <>
-                                {" — $"}
+            <section className="panel store-panel">
+              <div className="panel-heading store-heading">
+                <div>
+                  <p className="eyebrow">
+                    Step 2
+                  </p>
 
-                                {Number(
-                                  resultItem.unitPrice
-                                ).toFixed(
-                                  2
-                                )}
+                  <h2>
+                    Choose Stores
+                  </h2>
 
-                                {" each"}
+                  <p className="panel-description">
+                    Pick the locations
+                    you want included in
+                    your comparison.
+                  </p>
+                </div>
 
-                                {" — $"}
+                <label className="retailer-field">
+                  <span>
+                    Retailer
+                  </span>
 
-                                {Number(
-                                  resultItem.lineTotal
-                                ).toFixed(
-                                  2
-                                )}
+                  <select
+                    value={
+                      selectedRetailerId
+                    }
+                    onChange={
+                      handleRetailerChange
+                    }
+                  >
+                    <option value="">
+                      Select a retailer
+                    </option>
 
-                                {" total"}
-                              </>
-                            ) : (
-                              <>
-                                {
-                                  " — Price unavailable"
-                                }
-                              </>
-                            )}
-                          </li>
-                        )
-                      )}
-                    </ul>
-                  </article>
-                )
+                    {retailers.map(
+                      (retailer) => (
+                        <option
+                          key={
+                            retailer.id
+                          }
+                          value={
+                            retailer.id
+                          }
+                        >
+                          {
+                            retailer.name
+                          }
+                        </option>
+                      )
+                    )}
+                  </select>
+                </label>
+              </div>
+
+              {selectedRetailerId &&
+                stores.length === 0 && (
+                  <p className="empty-state">
+                    No stores found for
+                    this retailer.
+                  </p>
+                )}
+
+              {stores.length > 0 && (
+                <div className="store-grid">
+                  {stores.map(
+                    (store) => {
+                      const isSelected =
+                        selectedStoreIds.includes(
+                          store.id
+                        );
+
+                      return (
+                        <label
+                          className={`store-card ${
+                            isSelected
+                              ? "store-card-selected"
+                              : ""
+                          }`}
+                          key={
+                            store.id
+                          }
+                        >
+                          <input
+                            type="checkbox"
+                            checked={
+                              isSelected
+                            }
+                            onChange={() =>
+                              handleStoreToggle(
+                                store.id
+                              )
+                            }
+                          />
+
+                          <div className="store-check">
+                            {isSelected
+                              ? "✓"
+                              : ""}
+                          </div>
+
+                          <div className="store-details">
+                            <strong>
+                              {store.name ??
+                                "Store"}
+                            </strong>
+
+                            <span>
+                              {
+                                store.addressLine1
+                              }
+                            </span>
+
+                            <span>
+                              {store.city},{" "}
+                              {
+                                store.state
+                              }{" "}
+                              {
+                                store.postalCode
+                              }
+                            </span>
+                          </div>
+                        </label>
+                      );
+                    }
+                  )}
+                </div>
               )}
+
+              <div className="compare-bar">
+                <p>
+                  {`Selected stores: ${selectedStoreIds.length}`}
+                </p>
+
+                <button
+                  className="button button-primary compare-button"
+                  type="button"
+                  disabled={
+                    isComparing ||
+                    selectedStoreIds.length ===
+                      0
+                  }
+                  onClick={
+                    handleCompare
+                  }
+                >
+                  {isComparing
+                    ? "Comparing..."
+                    : "Compare Stores"}
+                </button>
+              </div>
             </section>
-          )}
-        </>
-      )}
-    </main>
+
+            {comparisonResult && (
+              <section className="results-section">
+                <div className="results-heading">
+                  <div>
+                    <p className="eyebrow">
+                      Step 3
+                    </p>
+
+                    <h2>
+                      Comparison Results
+                    </h2>
+                  </div>
+
+                  <div className="results-summary">
+                    <span className="summary-pill summary-complete">
+                      {`Complete stores: ${comparisonResult.completeStoreCount}`}
+                    </span>
+
+                    <span className="summary-pill">
+                      {`Incomplete stores: ${comparisonResult.incompleteStoreCount}`}
+                    </span>
+                  </div>
+                </div>
+
+                {comparisonResult
+                  .missingStoreLocationIds
+                  ?.length > 0 && (
+                  <div className="alert alert-warning">
+                    Some selected store
+                    IDs no longer exist:{" "}
+                    {comparisonResult.missingStoreLocationIds.join(
+                      ", "
+                    )}
+                  </div>
+                )}
+
+                <div className="result-grid">
+                  {comparisonResult.stores.map(
+                    (store) => {
+                      const isBest =
+                        store.isComplete &&
+                        store.rank === 1;
+
+                      return (
+                        <article
+                          className={`result-card ${
+                            isBest
+                              ? "result-card-best"
+                              : ""
+                          } ${
+                            !store.isComplete
+                              ? "result-card-incomplete"
+                              : ""
+                          }`}
+                          key={
+                            store.storeLocationId
+                          }
+                        >
+                          <div className="result-card-header">
+                            <div>
+                              <div className="result-labels">
+                                {isBest && (
+                                  <span className="best-price-badge">
+                                    Best price
+                                  </span>
+                                )}
+
+                                {!store.isComplete && (
+                                  <span className="incomplete-badge">
+                                    Incomplete
+                                  </span>
+                                )}
+                              </div>
+
+                              <h3>
+                                {store.rank
+                                  ? `#${store.rank} `
+                                  : ""}
+
+                                {
+                                  store.storeName
+                                }
+                              </h3>
+                            </div>
+
+                            <div className="result-price">
+                              <span className="sr-only">
+                                {`Known subtotal: $${Number(
+                                  store.knownSubtotal
+                                ).toFixed(2)}`}
+                              </span>
+
+                              <span aria-hidden="true">
+                                Known subtotal
+                              </span>
+
+                              <strong aria-hidden="true">
+                                $
+                                {Number(
+                                  store.knownSubtotal
+                                ).toFixed(
+                                  2
+                                )}
+                              </strong>
+                            </div>
+                          </div>
+
+                          <div className="result-status-row">
+                            <span>
+                              {`Status: ${
+                                store.isComplete
+                                  ? "Complete"
+                                  : "Incomplete"
+                              }`}
+                            </span>
+
+                            {!store.isComplete && (
+                              <span>
+                                {`Missing items: ${store.missingItemCount}`}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="result-items">
+                            {store.items.map(
+                              (
+                                resultItem
+                              ) => (
+                                <div
+                                  className="result-item-row"
+                                  key={
+                                    resultItem.itemId
+                                  }
+                                >
+                                  <span className="sr-only">
+                                    {resultItem.isAvailable
+                                      ? `${resultItem.itemName} — Qty ${resultItem.quantity} — $${Number(
+                                          resultItem.unitPrice
+                                        ).toFixed(2)} each — $${Number(
+                                          resultItem.lineTotal
+                                        ).toFixed(2)} total`
+                                      : `${resultItem.itemName} — Qty ${resultItem.quantity} — Price unavailable`}
+                                  </span>
+
+                                  <div aria-hidden="true">
+                                    <strong>
+                                      {
+                                        resultItem.itemName
+                                      }
+                                    </strong>
+
+                                    <span>
+                                      Qty{" "}
+                                      {
+                                        resultItem.quantity
+                                      }
+                                    </span>
+                                  </div>
+
+                                  {resultItem.isAvailable ? (
+                                    <div
+                                      className="result-item-price"
+                                      aria-hidden="true"
+                                    >
+                                      <span>
+                                        $
+                                        {Number(
+                                          resultItem.unitPrice
+                                        ).toFixed(
+                                          2
+                                        )}{" "}
+                                        each
+                                      </span>
+
+                                      <strong>
+                                        $
+                                        {Number(
+                                          resultItem.lineTotal
+                                        ).toFixed(
+                                          2
+                                        )}{" "}
+                                        total
+                                      </strong>
+                                    </div>
+                                  ) : (
+                                    <span
+                                      className="unavailable-text"
+                                      aria-hidden="true"
+                                    >
+                                      Price unavailable
+                                    </span>
+                                  )}
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </article>
+                      );
+                    }
+                  )}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
 

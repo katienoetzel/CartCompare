@@ -1,6 +1,7 @@
 import {
   render,
   screen,
+  within,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
@@ -357,17 +358,17 @@ describe(
 
         expect(
           screen.getByText(
-            /Complete stores:\s*1/
+            'Complete stores: 1'
           )
         ).toBeInTheDocument()
 
         expect(
           screen.getByText(
-            /Incomplete stores:\s*1/
+            'Incomplete stores: 1'
           )
         ).toBeInTheDocument()
 
-        expect(
+        const completeHeading =
           screen.getByRole(
             'heading',
             {
@@ -375,9 +376,8 @@ describe(
                 '#1 Kroger Downtown',
             }
           )
-        ).toBeInTheDocument()
 
-        expect(
+        const incompleteHeading =
           screen.getByRole(
             'heading',
             {
@@ -385,29 +385,62 @@ describe(
                 'Kroger North',
             }
           )
+
+        expect(
+          completeHeading
         ).toBeInTheDocument()
 
         expect(
-          screen.getByText(
+          incompleteHeading
+        ).toBeInTheDocument()
+
+        const completeCard =
+          completeHeading.closest(
+            'article'
+          )
+
+        const incompleteCard =
+          incompleteHeading.closest(
+            'article'
+          )
+
+        expect(
+          completeCard
+        ).not.toBeNull()
+
+        expect(
+          incompleteCard
+        ).not.toBeNull()
+
+        expect(
+          within(
+            completeCard
+          ).getByText(
             'Status: Complete'
           )
         ).toBeInTheDocument()
 
         expect(
-          screen.getByText(
+          within(
+            incompleteCard
+          ).getByText(
             'Status: Incomplete'
           )
         ).toBeInTheDocument()
 
         expect(
-          screen.getByText(
+          within(
+            incompleteCard
+          ).getByText(
             'Missing items: 1'
           )
         ).toBeInTheDocument()
 
         expect(
-          screen.getByText(
-            /Price unavailable/
+          within(
+            incompleteCard
+          ).getByText(
+            'Price unavailable'
           )
         ).toBeInTheDocument()
       }

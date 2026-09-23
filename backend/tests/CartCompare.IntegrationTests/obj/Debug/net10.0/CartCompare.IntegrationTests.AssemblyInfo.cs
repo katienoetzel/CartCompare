@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CartCompare.IntegrationTests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ceda2c343bcf796f1cd5821755597dc54bc1bb60")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f1cb53bae0b589579a6f78fd32b6eee98949ed66")]
 [assembly: System.Reflection.AssemblyProductAttribute("CartCompare.IntegrationTests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CartCompare.IntegrationTests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
