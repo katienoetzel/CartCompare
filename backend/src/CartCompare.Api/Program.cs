@@ -6,6 +6,7 @@ using CartCompare.Entities;
 using CartCompare.Infrastructure.Data;
 using CartCompare.Infrastructure.Providers;
 using CartCompare.Infrastructure.Providers.Kroger;
+using CartCompare.Infrastructure.Providers.LowesFoods;
 using CartCompare.Providers.Interfaces;
 using CartCompare.Repositories.Interfaces;
 using CartCompare.Repositories.Repositories;
@@ -235,6 +236,21 @@ builder.Services.AddScoped<IPriceProvider>(
         >()
 );
 
+builder.Services.AddSingleton<
+    LowesFoodsSessionClient
+>();
+
+builder.Services.AddSingleton<
+    LowesFoodsPriceProvider
+>();
+
+builder.Services.AddSingleton<IPriceProvider>(
+    provider =>
+        provider.GetRequiredService<
+            LowesFoodsPriceProvider
+        >()
+);
+
 builder.Services.AddScoped<
     IStoreLocationRepository,
     StoreLocationRepository
@@ -339,17 +355,27 @@ builder.Services.AddSingleton<KrogerTokenService>();
 
 
 // ==================================================
+// Lowes Foods / Inmar
+// ==================================================
+//
+// LowesFoodsSessionClient defaults to:
+// https://falcon.shop.inmar.io/
+//
+// It can be overridden with:
+// LowesFoods:BaseUrl
+//
+// No API key or user credential is stored here.
+// Each provider operation creates an isolated
+// cookie-backed session, selects the requested
+// store, performs the operation, then disposes
+// that session.
+
+
+// ==================================================
 // OpenAPI
 // ==================================================
 
 builder.Services.AddOpenApi();
-
-
-// ==================================================
-// Health checks
-// ==================================================
-
-builder.Services.AddHealthChecks();
 
 
 // ==================================================
@@ -414,12 +440,6 @@ if (
                 CartCompareDbContext
             >();
 
-    // The E2E database is intentionally reset
-    // before every E2E test run.
-    //
-    // This destructive reset is NEVER performed
-    // merely because production migrations are
-    // enabled.
     if (e2eEnabled)
     {
         var databaseName =
@@ -466,10 +486,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseHttpsRedirection();
+
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.MapHealthChecks("/health");
 
 app.MapControllers();
 

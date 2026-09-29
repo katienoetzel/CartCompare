@@ -1,4 +1,5 @@
 using CartCompare.Infrastructure.Providers.Kroger;
+using CartCompare.Infrastructure.Providers.LowesFoods;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,8 +8,9 @@ namespace CartCompare.Api.Controllers;
 
 [ApiController]
 [Route("api/integrations")]
-[Authorize(Policy = "AdminOnly")]
-public class IntegrationsController : ControllerBase
+[Authorize]
+public class IntegrationsController
+    : ControllerBase
 {
     private readonly KrogerTokenService
         _krogerTokenService;
@@ -16,19 +18,38 @@ public class IntegrationsController : ControllerBase
     private readonly KrogerPriceProvider
         _krogerPriceProvider;
 
+    private readonly LowesFoodsPriceProvider
+        _lowesFoodsPriceProvider;
+
+    private readonly IWebHostEnvironment
+        _environment;
+
     public IntegrationsController(
         KrogerTokenService krogerTokenService,
-        KrogerPriceProvider krogerPriceProvider)
+        KrogerPriceProvider krogerPriceProvider,
+        LowesFoodsPriceProvider lowesFoodsPriceProvider,
+        IWebHostEnvironment environment)
     {
         _krogerTokenService =
             krogerTokenService;
 
         _krogerPriceProvider =
             krogerPriceProvider;
+
+        _lowesFoodsPriceProvider =
+            lowesFoodsPriceProvider;
+
+        _environment =
+            environment;
     }
 
+    // =================================================
+    // Kroger
+    // =================================================
+
     [HttpGet("kroger/status")]
-    public async Task<IActionResult> GetKrogerStatus()
+    public async Task<IActionResult>
+        GetKrogerStatus()
     {
         await _krogerTokenService
             .GetAccessTokenAsync();
@@ -41,8 +62,9 @@ public class IntegrationsController : ControllerBase
     }
 
     [HttpGet("kroger/stores")]
-    public async Task<IActionResult> GetKrogerStores(
-        [FromQuery] string? postalCode)
+    public async Task<IActionResult>
+        GetKrogerStores(
+            [FromQuery] string postalCode)
     {
         if (
             string.IsNullOrWhiteSpace(
@@ -68,9 +90,10 @@ public class IntegrationsController : ControllerBase
     }
 
     [HttpGet("kroger/products")]
-    public async Task<IActionResult> SearchKrogerProducts(
-        [FromQuery] string? locationId,
-        [FromQuery] string? query)
+    public async Task<IActionResult>
+        SearchKrogerProducts(
+            [FromQuery] string locationId,
+            [FromQuery] string query)
     {
         if (
             string.IsNullOrWhiteSpace(
@@ -101,9 +124,10 @@ public class IntegrationsController : ControllerBase
     }
 
     [HttpGet("kroger/price")]
-    public async Task<IActionResult> GetKrogerPrice(
-        [FromQuery] string? locationId,
-        [FromQuery] string? productId)
+    public async Task<IActionResult>
+        GetKrogerPrice(
+            [FromQuery] string locationId,
+            [FromQuery] string productId)
     {
         if (
             string.IsNullOrWhiteSpace(
@@ -136,5 +160,160 @@ public class IntegrationsController : ControllerBase
         }
 
         return Ok(price);
+    }
+
+    // =================================================
+    // Lowes Foods
+    // =================================================
+
+    [HttpGet("lowes-foods/stores")]
+    public async Task<IActionResult>
+        GetLowesFoodsStores(
+            [FromQuery] string postalCode)
+    {
+        if (
+            string.IsNullOrWhiteSpace(
+                postalCode
+            )
+        )
+        {
+            return BadRequest(new
+            {
+                message =
+                    "Postal code is required."
+            });
+        }
+
+        var stores =
+            await _lowesFoodsPriceProvider
+                .FindStoresAsync(
+                    "Lowes Foods",
+                    postalCode
+                );
+
+        return Ok(stores);
+    }
+
+    [HttpGet("lowes-foods/products")]
+    public async Task<IActionResult>
+        SearchLowesFoodsProducts(
+            [FromQuery] string locationId,
+            [FromQuery] string query)
+    {
+        if (
+            string.IsNullOrWhiteSpace(
+                locationId
+            )
+            ||
+            string.IsNullOrWhiteSpace(
+                query
+            )
+        )
+        {
+            return BadRequest(new
+            {
+                message =
+                    "Location ID and search query are required."
+            });
+        }
+
+        var products =
+            await _lowesFoodsPriceProvider
+                .SearchProductsAsync(
+                    "Lowes Foods",
+                    locationId,
+                    query
+                );
+
+        return Ok(products);
+    }
+
+    [HttpGet("lowes-foods/price")]
+    public async Task<IActionResult>
+        GetLowesFoodsPrice(
+            [FromQuery] string locationId,
+            [FromQuery] string productId)
+    {
+        if (
+            string.IsNullOrWhiteSpace(
+                locationId
+            )
+            ||
+            string.IsNullOrWhiteSpace(
+                productId
+            )
+        )
+        {
+            return BadRequest(new
+            {
+                message =
+                    "Location ID and product ID are required."
+            });
+        }
+
+        var price =
+            await _lowesFoodsPriceProvider
+                .GetPriceAsync(
+                    "Lowes Foods",
+                    locationId,
+                    productId
+                );
+
+        if (price is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(price);
+    }
+
+    // =================================================
+    // Development-only Lowes Foods smoke test
+    // =================================================
+    //
+    // This intentionally bypasses JWT only in the
+    // Development environment so the provider can be
+    // verified quickly from PowerShell.
+    //
+    // Production returns 404.
+
+    [AllowAnonymous]
+    [HttpGet("lowes-foods/dev-search")]
+    public async Task<IActionResult>
+        DevSearchLowesFoods(
+            [FromQuery] string locationId,
+            [FromQuery] string query)
+    {
+        if (!_environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        if (
+            string.IsNullOrWhiteSpace(
+                locationId
+            )
+            ||
+            string.IsNullOrWhiteSpace(
+                query
+            )
+        )
+        {
+            return BadRequest(new
+            {
+                message =
+                    "Location ID and search query are required."
+            });
+        }
+
+        var products =
+            await _lowesFoodsPriceProvider
+                .SearchProductsAsync(
+                    "Lowes Foods",
+                    locationId,
+                    query
+                );
+
+        return Ok(products);
     }
 }
