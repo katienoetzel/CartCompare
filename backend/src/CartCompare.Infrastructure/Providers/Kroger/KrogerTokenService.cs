@@ -83,7 +83,10 @@ public class KrogerTokenService
         using var response =
             await httpClient.SendAsync(request);
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new KrogerApiException("token", response.StatusCode);
+        }
 
         var tokenResponse =
             await response.Content

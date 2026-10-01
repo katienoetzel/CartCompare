@@ -80,7 +80,10 @@ public class KrogerPriceProvider : IPriceProvider
         using var response =
             await httpClient.SendAsync(request);
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new KrogerApiException("locations", response.StatusCode);
+        }
 
         var krogerResponse =
             await response.Content
