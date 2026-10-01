@@ -11,8 +11,14 @@ namespace CartCompare.Infrastructure.Providers.LowesFoods;
 public sealed class LowesFoodsPriceProvider
     : IPriceProvider
 {
+    private const decimal MaximumStoreDistanceMiles = 25m;
+    private const int MaximumStoreResults = 20;
+
     private readonly LowesFoodsSessionClient
         _sessionClient;
+
+    private readonly LowesFoodsPostalCodeGeocoder
+        _postalCodeGeocoder;
 
     private readonly ConcurrentDictionary<
         string,
@@ -25,10 +31,14 @@ public sealed class LowesFoodsPriceProvider
             );
 
     public LowesFoodsPriceProvider(
-        LowesFoodsSessionClient sessionClient)
+        LowesFoodsSessionClient sessionClient,
+        LowesFoodsPostalCodeGeocoder postalCodeGeocoder)
     {
         _sessionClient =
             sessionClient;
+
+        _postalCodeGeocoder =
+            postalCodeGeocoder;
     }
 
     public string ProviderName =>
@@ -67,45 +77,24 @@ public sealed class LowesFoodsPriceProvider
             >();
         }
 
-        using var document =
-            await _sessionClient
-                .GetLocationsAsync();
+        var coordinates =
+            await _postalCodeGeocoder
+                .ResolveAsync(postalCode);
 
-        var stores =
-            ExtractLocations(
-                document.RootElement
-            );
-
-        if (stores.Count == 0)
+        if (coordinates is null)
         {
-            return stores;
+            return new List<ProviderStoreLocation>();
         }
 
-        var normalizedPostalCode =
-            NormalizePostalCode(
-                postalCode
+        using var document =
+            await _sessionClient.GetLocationsAsync(
+                coordinates.Value.Latitude,
+                coordinates.Value.Longitude
             );
 
-        var exactPostalMatches =
-            stores
-                .Where(
-                    store =>
-                        NormalizePostalCode(
-                            store.PostalCode
-                        )
-                        ==
-                        normalizedPostalCode
-                )
-                .ToList();
-
-        // The observed Inmar locations endpoint is
-        // session-aware and may already return a nearby
-        // location set. Prefer exact ZIP matches when they
-        // exist, but do not throw away the returned nearby
-        // stores when the exact ZIP is absent.
-        return exactPostalMatches.Count > 0
-            ? exactPostalMatches
-            : stores;
+        // Inmar searches around these coordinates. The
+        // nearby stores can have different postal codes.
+        return ExtractLocations(document.RootElement);
     }
 
     public async Task<
@@ -466,7 +455,7 @@ public sealed class LowesFoodsPriceProvider
             .ToList();
     }
 
-    private static List<
+    internal static List<
         ProviderStoreLocation
     >
         ExtractLocations(
@@ -475,7 +464,7 @@ public sealed class LowesFoodsPriceProvider
         var stores =
             new Dictionary<
                 string,
-                ProviderStoreLocation
+                (ProviderStoreLocation Store, decimal DistanceMiles)
             >(
                 StringComparer
                     .OrdinalIgnoreCase
@@ -502,6 +491,28 @@ public sealed class LowesFoodsPriceProvider
                     out var locationId
                 )
             )
+            {
+                continue;
+            }
+
+            var distance = TryGetDecimal(
+                element,
+                "distanceFromSearchCoordinates"
+            );
+
+            var distanceUnits = GetOptionalString(
+                element,
+                "distanceUnits"
+            );
+
+            if (distance is null
+                || distance < 0
+                || distance > MaximumStoreDistanceMiles
+                || !string.Equals(
+                    distanceUnits,
+                    "mi",
+                    StringComparison.OrdinalIgnoreCase
+                ))
             {
                 continue;
             }
@@ -643,9 +654,7 @@ public sealed class LowesFoodsPriceProvider
                     "long"
                 );
 
-            stores[
-                locationId
-            ] =
+            stores[locationId] = (
                 new ProviderStoreLocation
                 {
                     ExternalLocationId =
@@ -674,10 +683,16 @@ public sealed class LowesFoodsPriceProvider
 
                     Longitude =
                         longitude
-                };
+                },
+                distance.Value
+            );
         }
 
         return stores.Values
+            .OrderBy(location => location.DistanceMiles)
+            .ThenBy(location => location.Store.Name)
+            .Take(MaximumStoreResults)
+            .Select(location => location.Store)
             .ToList();
     }
 
@@ -978,21 +993,6 @@ public sealed class LowesFoodsPriceProvider
         }
 
         return null;
-    }
-
-    private static string
-        NormalizePostalCode(
-            string postalCode)
-    {
-        var trimmed =
-            postalCode.Trim();
-
-        if (trimmed.Length >= 5)
-        {
-            return trimmed[..5];
-        }
-
-        return trimmed;
     }
 
     private sealed class

@@ -72,6 +72,7 @@ public class StoreLocationSyncService
 
         var createdCount = 0;
         var updatedCount = 0;
+        var syncedStoreLocationIds = new List<int>();
         var now = DateTime.UtcNow;
 
         foreach (var providerStore in providerStores)
@@ -124,6 +125,7 @@ public class StoreLocationSyncService
                 await _storeLocationRepository
                     .AddAsync(storeLocation);
 
+                syncedStoreLocationIds.Add(storeLocation.Id);
                 createdCount++;
 
                 continue;
@@ -159,6 +161,7 @@ public class StoreLocationSyncService
             await _storeLocationRepository
                 .UpdateAsync(existingStore);
 
+            syncedStoreLocationIds.Add(existingStore.Id);
             updatedCount++;
         }
 
@@ -178,7 +181,10 @@ public class StoreLocationSyncService
                 createdCount,
 
             UpdatedCount =
-                updatedCount
+                updatedCount,
+
+            SyncedStoreLocationIds =
+                syncedStoreLocationIds
         };
     }
 }

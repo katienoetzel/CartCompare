@@ -15,4 +15,6 @@ public class StoreLocationSyncResult
     public int CreatedCount { get; set; }
 
     public int UpdatedCount { get; set; }
+
+    public List<int> SyncedStoreLocationIds { get; set; } = new();
 }

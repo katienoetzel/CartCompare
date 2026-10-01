@@ -37,7 +37,9 @@ public sealed class LowesFoodsSessionClient
     }
 
     public async Task<JsonDocument>
-        GetLocationsAsync()
+        GetLocationsAsync(
+            decimal latitude,
+            decimal longitude)
     {
         using var handler =
             CreateHandler();
@@ -52,10 +54,12 @@ public sealed class LowesFoodsSessionClient
             externalLocationId: null
         );
 
+        var path = FormattableString.Invariant(
+            $"v2/locations?fulfillmentMethod=pickup&lat={latitude}&lon={longitude}"
+        );
+
         using var response =
-            await client.GetAsync(
-                "v2/locations?fulfillmentMethod=pickup"
-            );
+            await client.GetAsync(path);
 
         await EnsureSuccessAsync(
             response,

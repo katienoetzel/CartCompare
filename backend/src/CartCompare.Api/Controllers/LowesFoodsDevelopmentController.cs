@@ -2,6 +2,7 @@ using CartCompare.Entities;
 using CartCompare.Infrastructure.Data;
 using CartCompare.Infrastructure.Providers.LowesFoods;
 using CartCompare.Services.Interfaces;
+using CartCompare.Services.Models;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,11 +34,15 @@ public sealed class LowesFoodsDevelopmentController
     private readonly IProductPriceSyncService
         _productPriceSyncService;
 
+    private readonly IStoreLocationSyncService
+        _storeLocationSyncService;
+
     public LowesFoodsDevelopmentController(
         IWebHostEnvironment environment,
         CartCompareDbContext dbContext,
         LowesFoodsPriceProvider lowesFoodsPriceProvider,
-        IProductPriceSyncService productPriceSyncService)
+        IProductPriceSyncService productPriceSyncService,
+        IStoreLocationSyncService storeLocationSyncService)
     {
         _environment =
             environment;
@@ -50,6 +55,104 @@ public sealed class LowesFoodsDevelopmentController
 
         _productPriceSyncService =
             productPriceSyncService;
+
+        _storeLocationSyncService =
+            storeLocationSyncService;
+    }
+
+    [HttpGet("stores")]
+    public async Task<IActionResult> FindStores(
+        [FromQuery] string? postalCode)
+    {
+        if (!_environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        if (string.IsNullOrWhiteSpace(postalCode))
+        {
+            return BadRequest(new
+            {
+                message = "Postal code is required."
+            });
+        }
+
+        var stores =
+            await _lowesFoodsPriceProvider
+                .FindStoresAsync(
+                    RetailerName,
+                    postalCode
+                );
+
+        return Ok(stores);
+    }
+
+    [HttpPost("sync-stores")]
+    public async Task<IActionResult> SyncStores(
+        [FromQuery] string? postalCode)
+    {
+        if (!_environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        if (string.IsNullOrWhiteSpace(postalCode))
+        {
+            return BadRequest(new
+            {
+                message = "Postal code is required."
+            });
+        }
+
+        var retailer =
+            await EnsureRetailerAsync();
+
+        var sync =
+            await _storeLocationSyncService
+                .SyncAsync(
+                    retailer.Id,
+                    postalCode.Trim()
+                );
+
+        if (sync.Result != StoreLocationSyncResultType.Succeeded)
+        {
+            return StatusCode(500, sync);
+        }
+
+        var syncedIds = sync.SyncedStoreLocationIds;
+
+        var persistedStores =
+            await _dbContext
+                .StoreLocations
+                .AsNoTracking()
+                .Where(store =>
+                    store.RetailerId == retailer.Id
+                    && syncedIds.Contains(store.Id)
+                )
+                .OrderBy(store => store.Id)
+                .Select(store => new
+                {
+                    store.Id,
+                    store.ExternalLocationId,
+                    store.Name,
+                    store.AddressLine1,
+                    store.City,
+                    store.State,
+                    store.PostalCode,
+                    store.IsActive
+                })
+                .ToListAsync();
+
+        return Ok(new
+        {
+            retailer = new
+            {
+                retailer.Id,
+                retailer.Name
+            },
+            sync,
+            persistedStores
+        });
     }
 
     [HttpPost("bootstrap-and-sync")]

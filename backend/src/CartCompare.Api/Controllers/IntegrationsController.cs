@@ -8,7 +8,7 @@ namespace CartCompare.Api.Controllers;
 
 [ApiController]
 [Route("api/integrations")]
-[Authorize]
+[Authorize(Policy = "AdminOnly")]
 public class IntegrationsController
     : ControllerBase
 {
@@ -64,7 +64,7 @@ public class IntegrationsController
     [HttpGet("kroger/stores")]
     public async Task<IActionResult>
         GetKrogerStores(
-            [FromQuery] string postalCode)
+            [FromQuery] string? postalCode)
     {
         if (
             string.IsNullOrWhiteSpace(
@@ -92,8 +92,8 @@ public class IntegrationsController
     [HttpGet("kroger/products")]
     public async Task<IActionResult>
         SearchKrogerProducts(
-            [FromQuery] string locationId,
-            [FromQuery] string query)
+            [FromQuery] string? locationId,
+            [FromQuery] string? query)
     {
         if (
             string.IsNullOrWhiteSpace(
@@ -126,8 +126,8 @@ public class IntegrationsController
     [HttpGet("kroger/price")]
     public async Task<IActionResult>
         GetKrogerPrice(
-            [FromQuery] string locationId,
-            [FromQuery] string productId)
+            [FromQuery] string? locationId,
+            [FromQuery] string? productId)
     {
         if (
             string.IsNullOrWhiteSpace(
@@ -169,7 +169,7 @@ public class IntegrationsController
     [HttpGet("lowes-foods/stores")]
     public async Task<IActionResult>
         GetLowesFoodsStores(
-            [FromQuery] string postalCode)
+            [FromQuery] string? postalCode)
     {
         if (
             string.IsNullOrWhiteSpace(
@@ -197,8 +197,8 @@ public class IntegrationsController
     [HttpGet("lowes-foods/products")]
     public async Task<IActionResult>
         SearchLowesFoodsProducts(
-            [FromQuery] string locationId,
-            [FromQuery] string query)
+            [FromQuery] string? locationId,
+            [FromQuery] string? query)
     {
         if (
             string.IsNullOrWhiteSpace(
@@ -231,8 +231,8 @@ public class IntegrationsController
     [HttpGet("lowes-foods/price")]
     public async Task<IActionResult>
         GetLowesFoodsPrice(
-            [FromQuery] string locationId,
-            [FromQuery] string productId)
+            [FromQuery] string? locationId,
+            [FromQuery] string? productId)
     {
         if (
             string.IsNullOrWhiteSpace(
@@ -281,8 +281,8 @@ public class IntegrationsController
     [HttpGet("lowes-foods/dev-search")]
     public async Task<IActionResult>
         DevSearchLowesFoods(
-            [FromQuery] string locationId,
-            [FromQuery] string query)
+            [FromQuery] string? locationId,
+            [FromQuery] string? query)
     {
         if (!_environment.IsDevelopment())
         {

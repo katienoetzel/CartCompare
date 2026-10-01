@@ -240,6 +240,30 @@ builder.Services.AddSingleton<
     LowesFoodsSessionClient
 >();
 
+builder.Services.AddHttpClient(
+    LowesFoodsPostalCodeGeocoder.ClientName,
+    client =>
+    {
+        var baseUrl =
+            builder.Configuration[
+                "LowesFoods:PostalLookupBaseUrl"
+            ]
+            ?? "https://api.zippopotam.us/";
+
+        client.BaseAddress = new Uri(
+            baseUrl.EndsWith('/')
+                ? baseUrl
+                : baseUrl + "/"
+        );
+
+        client.Timeout = TimeSpan.FromSeconds(10);
+    }
+);
+
+builder.Services.AddSingleton<
+    LowesFoodsPostalCodeGeocoder
+>();
+
 builder.Services.AddSingleton<
     LowesFoodsPriceProvider
 >();

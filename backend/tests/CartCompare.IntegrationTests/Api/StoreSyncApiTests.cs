@@ -13,6 +13,245 @@ public class StoreSyncApiTests
     : PostgresIntegrationTestBase
 {
     [Fact]
+    public async Task LowesFoodsDevelopmentSync_ReusesDiscoveredStore()
+    {
+        using var factory =
+            new CartCompareWebApplicationFactory(
+                ConnectionString
+            );
+
+        factory.TestPriceProvider
+            .SupportedRetailers
+            .Add("Lowes Foods");
+
+        factory.TestPriceProvider.StoresToReturn =
+            new List<ProviderStoreLocation>
+            {
+                new()
+                {
+                    ExternalLocationId =
+                        "4rw2mRMnac9YV56NM4GY1N",
+                    Name = "LOWES 185 GARNER, NC",
+                    AddressLine1 = "1845 AVERSBORO ROAD",
+                    City = "GARNER",
+                    State = "NC",
+                    PostalCode = "27529"
+                }
+            };
+
+        using var client =
+            factory.CreateClient();
+
+        const string url =
+            "/api/dev/lowes-foods/sync-stores?postalCode=27529";
+
+        using var firstResponse =
+            await client.PostAsync(url, null);
+
+        Assert.Equal(
+            HttpStatusCode.OK,
+            firstResponse.StatusCode
+        );
+
+        using var first =
+            JsonDocument.Parse(
+                await firstResponse.Content.ReadAsStringAsync()
+            );
+
+        Assert.Equal(
+            1,
+            first.RootElement
+                .GetProperty("sync")
+                .GetProperty("createdCount")
+                .GetInt32()
+        );
+
+        var firstStore =
+            first.RootElement
+                .GetProperty("persistedStores")[0];
+
+        var storeId =
+            firstStore.GetProperty("id").GetInt32();
+
+        Assert.Equal(
+            storeId,
+            first.RootElement
+                .GetProperty("sync")
+                .GetProperty("syncedStoreLocationIds")[0]
+                .GetInt32()
+        );
+
+        Assert.Equal(
+            "4rw2mRMnac9YV56NM4GY1N",
+            firstStore
+                .GetProperty("externalLocationId")
+                .GetString()
+        );
+
+        factory.TestPriceProvider
+            .StoresToReturn[0]
+            .Name = "Lowes Foods #185 - Garner";
+
+        using var secondResponse =
+            await client.PostAsync(url, null);
+
+        Assert.Equal(
+            HttpStatusCode.OK,
+            secondResponse.StatusCode
+        );
+
+        using var second =
+            JsonDocument.Parse(
+                await secondResponse.Content.ReadAsStringAsync()
+            );
+
+        var secondSync =
+            second.RootElement.GetProperty("sync");
+
+        Assert.Equal(
+            0,
+            secondSync.GetProperty("createdCount").GetInt32()
+        );
+
+        Assert.Equal(
+            1,
+            secondSync.GetProperty("updatedCount").GetInt32()
+        );
+
+        var secondStores =
+            second.RootElement
+                .GetProperty("persistedStores");
+
+        Assert.Equal(1, secondStores.GetArrayLength());
+        Assert.Equal(
+            storeId,
+            secondStores[0].GetProperty("id").GetInt32()
+        );
+
+        Assert.Equal(
+            storeId,
+            secondSync
+                .GetProperty("syncedStoreLocationIds")[0]
+                .GetInt32()
+        );
+
+        Assert.Equal(
+            "Lowes Foods #185 - Garner",
+            secondStores[0]
+                .GetProperty("name")
+                .GetString()
+        );
+
+        Assert.Equal(
+            2,
+            factory.TestPriceProvider.FindStoresCalls.Count
+        );
+    }
+
+    [Fact]
+    public async Task LowesFoodsDevelopmentSync_ReturnsNearbyStoresFromCurrentSearch()
+    {
+        using var factory =
+            new CartCompareWebApplicationFactory(
+                ConnectionString
+            );
+
+        factory.TestPriceProvider
+            .SupportedRetailers
+            .Add("Lowes Foods");
+
+        factory.TestPriceProvider.StoresToReturn =
+            new List<ProviderStoreLocation>
+            {
+                new()
+                {
+                    ExternalLocationId = "RALEIGH-191",
+                    Name = "Lowes Foods #191",
+                    AddressLine1 = "9600 Strickland Road",
+                    City = "Raleigh",
+                    State = "NC",
+                    PostalCode = "27615"
+                }
+            };
+
+        using var client = factory.CreateClient();
+
+        using var nearbyResponse =
+            await client.PostAsync(
+                "/api/dev/lowes-foods/sync-stores?postalCode=27613",
+                null
+            );
+
+        Assert.Equal(HttpStatusCode.OK, nearbyResponse.StatusCode);
+
+        using var nearby = JsonDocument.Parse(
+            await nearbyResponse.Content.ReadAsStringAsync()
+        );
+
+        var nearbyStore =
+            nearby.RootElement
+                .GetProperty("persistedStores")[0];
+
+        Assert.Equal(
+            "27615",
+            nearbyStore.GetProperty("postalCode").GetString()
+        );
+
+        var nearbyStoreId =
+            nearbyStore.GetProperty("id").GetInt32();
+
+        Assert.Equal(
+            nearbyStoreId,
+            nearby.RootElement
+                .GetProperty("sync")
+                .GetProperty("syncedStoreLocationIds")[0]
+                .GetInt32()
+        );
+
+        factory.TestPriceProvider.StoresToReturn =
+            new List<ProviderStoreLocation>
+            {
+                new()
+                {
+                    ExternalLocationId = "GARNER-185",
+                    Name = "Lowes Foods #185",
+                    AddressLine1 = "1845 Aversboro Road",
+                    City = "Garner",
+                    State = "NC",
+                    PostalCode = "27529"
+                }
+            };
+
+        using var garnerResponse =
+            await client.PostAsync(
+                "/api/dev/lowes-foods/sync-stores?postalCode=27529",
+                null
+            );
+
+        Assert.Equal(HttpStatusCode.OK, garnerResponse.StatusCode);
+
+        using var garner = JsonDocument.Parse(
+            await garnerResponse.Content.ReadAsStringAsync()
+        );
+
+        var currentStores =
+            garner.RootElement.GetProperty("persistedStores");
+
+        Assert.Equal(1, currentStores.GetArrayLength());
+        Assert.Equal(
+            "GARNER-185",
+            currentStores[0]
+                .GetProperty("externalLocationId")
+                .GetString()
+        );
+
+        Assert.NotEqual(
+            nearbyStoreId,
+            currentStores[0].GetProperty("id").GetInt32()
+        );
+    }
+
+    [Fact]
     public async Task Sync_WithoutToken_ReturnsUnauthorized()
     {
         // Arrange

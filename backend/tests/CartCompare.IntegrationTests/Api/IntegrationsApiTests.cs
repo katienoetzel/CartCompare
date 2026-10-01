@@ -13,6 +13,94 @@ namespace CartCompare.IntegrationTests.Api;
 public class IntegrationsApiTests
     : PostgresIntegrationTestBase
 {
+    [Fact]
+    public async Task LowesFoodsDevelopmentStores_WithoutPostalCode_ReturnsBadRequest()
+    {
+        using var factory =
+            new CartCompareWebApplicationFactory(
+                ConnectionString
+            );
+
+        using var client =
+            factory.CreateClient();
+
+        var response =
+            await client.GetAsync(
+                "/api/dev/lowes-foods/stores"
+            );
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            response.StatusCode
+        );
+
+        using var document =
+            JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync()
+            );
+
+        Assert.Equal(
+            "Postal code is required.",
+            document.RootElement
+                .GetProperty("message")
+                .GetString()
+        );
+    }
+
+    [Theory]
+    [InlineData(
+        "/api/integrations/lowes-foods/stores",
+        "Postal code is required."
+    )]
+    [InlineData(
+        "/api/integrations/lowes-foods/products?locationId=&query=",
+        "Location ID and search query are required."
+    )]
+    [InlineData(
+        "/api/integrations/lowes-foods/price?locationId=&productId=",
+        "Location ID and product ID are required."
+    )]
+    public async Task LowesFoodsEndpoints_WithMissingArguments_ReturnCustomBadRequest(
+        string url,
+        string expectedMessage)
+    {
+        using var factory =
+            new CartCompareWebApplicationFactory(
+                ConnectionString
+            );
+
+        using var client =
+            factory.CreateClient();
+
+        var token =
+            await RegisterAndGetTokenAsync(
+                client,
+                $"lowes-invalid-{Guid.NewGuid():N}@example.com"
+            );
+
+        SetBearerToken(client, token);
+
+        var response =
+            await client.GetAsync(url);
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            response.StatusCode
+        );
+
+        using var document =
+            JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync()
+            );
+
+        Assert.Equal(
+            expectedMessage,
+            document.RootElement
+                .GetProperty("message")
+                .GetString()
+        );
+    }
+
     [Theory]
     [InlineData(
         "/api/integrations/kroger/status"
