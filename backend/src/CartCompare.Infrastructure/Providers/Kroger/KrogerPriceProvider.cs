@@ -10,6 +10,8 @@ namespace CartCompare.Infrastructure.Providers.Kroger;
 
 public class KrogerPriceProvider : IPriceProvider
 {
+    private const string HarrisTeeterChainCode = "HART";
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly KrogerTokenService _tokenService;
 
@@ -28,6 +30,10 @@ public class KrogerPriceProvider : IPriceProvider
         return string.Equals(
             retailerName,
             "Kroger",
+            StringComparison.OrdinalIgnoreCase
+        ) || string.Equals(
+            retailerName,
+            "Harris Teeter",
             StringComparison.OrdinalIgnoreCase
         );
     }
@@ -53,8 +59,15 @@ public class KrogerPriceProvider : IPriceProvider
         var encodedPostalCode =
             Uri.EscapeDataString(postalCode.Trim());
 
-        var encodedChain =
-            Uri.EscapeDataString(retailerName.Trim());
+        var isHarrisTeeter = string.Equals(
+            retailerName,
+            "Harris Teeter",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+        var encodedChain = Uri.EscapeDataString(
+            isHarrisTeeter ? HarrisTeeterChainCode : retailerName.Trim()
+        );
 
         var requestUrl =
             $"v1/locations" +
@@ -103,6 +116,11 @@ public class KrogerPriceProvider : IPriceProvider
 
             if (
                 string.IsNullOrWhiteSpace(location.LocationId) ||
+                (isHarrisTeeter &&
+                 !string.Equals(
+                     location.Chain,
+                     HarrisTeeterChainCode,
+                     StringComparison.OrdinalIgnoreCase)) ||
                 address is null ||
                 string.IsNullOrWhiteSpace(address.AddressLine1) ||
                 string.IsNullOrWhiteSpace(address.City) ||
