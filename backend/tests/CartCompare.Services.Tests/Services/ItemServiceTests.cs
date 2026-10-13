@@ -284,6 +284,81 @@ public class ItemServiceTests
         );
     }
 
+    [Fact]
+    public async Task UpdateAsync_WhenBrandIsNull_ClearsBrandAndSavesItem()
+    {
+        // Arrange
+        var item =
+            CreateItem(
+                id: 1,
+                name: "Whole Milk"
+            );
+
+        item.Brand = "Kroger";
+        item.Size = "1 gallon";
+
+        _itemRepositoryMock
+            .Setup(repository =>
+                repository.GetByIdAsync(1)
+            )
+            .ReturnsAsync(item);
+
+        // Act
+        var result =
+            await _service.UpdateAsync(
+                1,
+                "  Whole Milk ",
+                null,
+                "1 gallon",
+                "  "
+            );
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Whole Milk", result.Name);
+        Assert.Null(result.Brand);
+        Assert.Equal("1 gallon", result.Size);
+        Assert.Null(result.Category);
+
+        _itemRepositoryMock.Verify(
+            repository =>
+                repository.UpdateAsync(item),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenItemDoesNotExist_ReturnsNullWithoutSaving()
+    {
+        // Arrange
+        _itemRepositoryMock
+            .Setup(repository =>
+                repository.GetByIdAsync(99)
+            )
+            .ReturnsAsync((Item?)null);
+
+        // Act
+        var result =
+            await _service.UpdateAsync(
+                99,
+                "Whole Milk",
+                null,
+                null,
+                null
+            );
+
+        // Assert
+        Assert.Null(result);
+
+        _itemRepositoryMock.Verify(
+            repository =>
+                repository.UpdateAsync(
+                    It.IsAny<Item>()
+                ),
+            Times.Never
+        );
+    }
+
     private static Item CreateItem(
         int id,
         string name)

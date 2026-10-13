@@ -44,4 +44,36 @@ public class ItemService : IItemService
 
         return item;
     }
+
+    public async Task<Item?> UpdateAsync(
+        int id,
+        string name,
+        string? brand,
+        string? size,
+        string? category)
+    {
+        var item = await _itemRepository.GetByIdAsync(id);
+
+        if (item is null)
+        {
+            return null;
+        }
+
+        item.Name = name.Trim();
+        item.Brand = EmptyToNull(brand);
+        item.Size = EmptyToNull(size);
+        item.Category = EmptyToNull(category);
+        item.UpdatedAt = DateTime.UtcNow;
+
+        await _itemRepository.UpdateAsync(item);
+
+        return item;
+    }
+
+    private static string? EmptyToNull(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim();
+    }
 }

@@ -37,6 +37,10 @@ public class AdminAuthorizationApiTests
         "/api/items"
     )]
     [InlineData(
+        "PUT",
+        "/api/items/1"
+    )]
+    [InlineData(
         "POST",
         "/api/retailers"
     )]
@@ -102,6 +106,10 @@ public class AdminAuthorizationApiTests
     [InlineData(
         "POST",
         "/api/items"
+    )]
+    [InlineData(
+        "PUT",
+        "/api/items/1"
     )]
     [InlineData(
         "POST",

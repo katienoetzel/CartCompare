@@ -63,4 +63,37 @@ public class ItemsController : ControllerBase
 
         return Ok(item);
     }
+
+    // Replaces an item's name, brand, size, and category.
+    // Send "brand": null to make a brand-specific item generic,
+    // so products from every retailer's brand can match it.
+    [Authorize(Policy = "AdminOnly")]
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(
+        int id,
+        UpdateItemRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            return BadRequest(
+                "Name is required."
+            );
+        }
+
+        var item =
+            await _itemService.UpdateAsync(
+                id,
+                request.Name,
+                request.Brand,
+                request.Size,
+                request.Category
+            );
+
+        if (item is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(item);
+    }
 }

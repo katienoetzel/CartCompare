@@ -9,4 +9,6 @@ public interface IItemRepository
     Task<Item?> GetByIdAsync(int id);
 
     Task AddAsync(Item item);
+
+    Task UpdateAsync(Item item);
 }
