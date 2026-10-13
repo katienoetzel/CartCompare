@@ -534,6 +534,197 @@ public class ProductMatchingServiceTests
         );
     }
 
+    [Theory]
+    [InlineData("Harris Teeter Vitamin D Milk", "Harris Teeter")]
+    [InlineData("Kroger® Vitamin D Whole Milk", "Kroger")]
+    [InlineData("Lowes Foods Vitamin D Whole Milk 1 gal", "Lowes Foods")]
+    public async Task EvaluateAsync_WhenGenericItemMatchesAnyBrandsWholeMilk_ReturnsDeterministicMatch(
+        string providerName,
+        string providerBrand)
+    {
+        // Arrange
+        var item = CreateItem(
+            id: 1,
+            name: "Whole Milk",
+            size: "1 gallon"
+        );
+
+        var providerProduct =
+            CreateProviderProduct(
+                name: providerName,
+                brand: providerBrand,
+                size: "1 gal"
+            );
+
+        SetupExistingProducts(
+            item.Id,
+            new List<RetailerProduct>()
+        );
+
+        // Act
+        var result =
+            await _service.EvaluateAsync(
+                item,
+                providerProduct
+            );
+
+        // Assert
+        Assert.True(result.IsMatch);
+
+        Assert.Equal(
+            ProductMatchMethod.Deterministic,
+            result.MatchMethod
+        );
+    }
+
+    [Theory]
+    [InlineData("Kroger Chocolate Whole Milk", "chocolate")]
+    [InlineData("Harris Teeter Lactose Free Whole Milk", "lactose")]
+    [InlineData("Simple Truth Organic Whole Milk", "organic")]
+    [InlineData("Fairlife Ultra-Filtered Whole Milk", "ultra")]
+    public async Task EvaluateAsync_WhenProviderProductIsDifferentVariant_ReturnsNoMatch(
+        string providerName,
+        string expectedVariant)
+    {
+        // Arrange
+        var item = CreateItem(
+            id: 1,
+            name: "Whole Milk",
+            size: "1 gallon"
+        );
+
+        var providerProduct =
+            CreateProviderProduct(
+                name: providerName,
+                size: "1 gal"
+            );
+
+        SetupExistingProducts(
+            item.Id,
+            new List<RetailerProduct>()
+        );
+
+        // Act
+        var result =
+            await _service.EvaluateAsync(
+                item,
+                providerProduct
+            );
+
+        // Assert
+        Assert.False(result.IsMatch);
+        Assert.Null(result.MatchMethod);
+
+        Assert.Equal(
+            $"The provider product is a different variant ({expectedVariant}).",
+            result.Reason
+        );
+    }
+
+    [Theory]
+    [InlineData("Harris Teeter 2% Reduced Fat Vitamin D Milk")]
+    [InlineData("Kroger 1 % Lowfat Vitamin D Milk")]
+    public async Task EvaluateAsync_WhenProviderProductHasFatPercentage_ReturnsNoMatch(
+        string providerName)
+    {
+        // Arrange
+        var item = CreateItem(
+            id: 1,
+            name: "Whole Milk",
+            size: "1 gallon"
+        );
+
+        var providerProduct =
+            CreateProviderProduct(
+                name: providerName,
+                size: "1 gal"
+            );
+
+        SetupExistingProducts(
+            item.Id,
+            new List<RetailerProduct>()
+        );
+
+        // Act
+        var result =
+            await _service.EvaluateAsync(
+                item,
+                providerProduct
+            );
+
+        // Assert
+        Assert.False(result.IsMatch);
+
+        Assert.Equal(
+            "The provider product is a different variant (fat percentage).",
+            result.Reason
+        );
+    }
+
+    [Fact]
+    public async Task EvaluateAsync_WhenItemNameIncludesVariant_AllowsThatVariant()
+    {
+        // Arrange
+        var item = CreateItem(
+            id: 1,
+            name: "Chocolate Milk",
+            size: "1 gallon"
+        );
+
+        var providerProduct =
+            CreateProviderProduct(
+                name: "Kroger Chocolate Milk",
+                size: "1 gal"
+            );
+
+        SetupExistingProducts(
+            item.Id,
+            new List<RetailerProduct>()
+        );
+
+        // Act
+        var result =
+            await _service.EvaluateAsync(
+                item,
+                providerProduct
+            );
+
+        // Assert
+        Assert.True(result.IsMatch);
+    }
+
+    [Fact]
+    public async Task EvaluateAsync_WhenItemNameIncludesFatPercentage_AllowsThatPercentage()
+    {
+        // Arrange
+        var item = CreateItem(
+            id: 1,
+            name: "2% Reduced Fat Milk",
+            size: "1 gallon"
+        );
+
+        var providerProduct =
+            CreateProviderProduct(
+                name: "Harris Teeter 2% Reduced Fat Milk",
+                size: "1 gal"
+            );
+
+        SetupExistingProducts(
+            item.Id,
+            new List<RetailerProduct>()
+        );
+
+        // Act
+        var result =
+            await _service.EvaluateAsync(
+                item,
+                providerProduct
+            );
+
+        // Assert
+        Assert.True(result.IsMatch);
+    }
+
     private void SetupExistingProducts(
         int itemId,
         List<RetailerProduct> products)

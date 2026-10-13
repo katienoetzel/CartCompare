@@ -61,10 +61,14 @@ public class ProductMatchingService
         }
 
         var itemName =
-            NormalizeText(item.Name);
+            CanonicalizeName(
+                NormalizeText(item.Name)
+            );
 
         var providerName =
-            NormalizeText(providerProduct.Name);
+            CanonicalizeName(
+                NormalizeText(providerProduct.Name)
+            );
 
         if (
             string.IsNullOrWhiteSpace(itemName) ||
@@ -151,6 +155,25 @@ public class ProductMatchingService
             itemTokens.Count >= 2 &&
             itemTokens.All(providerTokens.Contains))
         {
+            // A product that is a different variant of the
+            // same food is not an equivalent substitute.
+            //
+            // "Whole Milk" must not match "Chocolate Whole Milk",
+            // "Lactose Free Whole Milk", or "2% Reduced Fat Milk",
+            // even though the sizes agree.
+            var variantReason =
+                GetVariantMismatchReason(
+                    item.Name,
+                    itemName,
+                    providerProduct.Name,
+                    providerName
+                );
+
+            if (variantReason is not null)
+            {
+                return NoMatch(variantReason);
+            }
+
             return new ProductMatchResult
             {
                 IsMatch = true,
@@ -180,6 +203,101 @@ public class ProductMatchingService
             MatchConfidence = null,
             Reason = reason
         };
+    }
+
+    // Words that turn a product into a different variant.
+    // A provider product containing one of these is only
+    // accepted when the canonical item name contains it too.
+    private static readonly HashSet<string> VariantTokens =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "chocolate",
+            "strawberry",
+            "vanilla",
+            "flavored",
+            "lactose",
+            "reduced",
+            "fat",
+            "nonfat",
+            "lowfat",
+            "skim",
+            "organic",
+            "ultra",
+            "a2",
+            "goat",
+            "almond",
+            "oat",
+            "soy",
+            "coconut"
+        };
+
+    // Matches fat percentages such as "2%", "1 %", or "0.5%".
+    private static readonly Regex PercentPattern =
+        new(@"(?<value>\d+(\.\d+)?)\s*%", RegexOptions.Compiled);
+
+    private static string? GetVariantMismatchReason(
+        string rawItemName,
+        string itemName,
+        string rawProviderName,
+        string providerName)
+    {
+        // Percentages must be read from the raw names,
+        // because normalization removes the "%" sign and
+        // would confuse "2%" with a size such as "2 lb".
+        if (
+            !GetPercentages(rawProviderName)
+                .SetEquals(GetPercentages(rawItemName)))
+        {
+            return "The provider product is a different variant (fat percentage).";
+        }
+
+        var itemTokens =
+            GetNameTokens(itemName);
+
+        var extraVariant =
+            GetNameTokens(providerName)
+                .Where(token =>
+                    VariantTokens.Contains(token) &&
+                    !itemTokens.Contains(token)
+                )
+                .OrderBy(token => token)
+                .FirstOrDefault();
+
+        if (extraVariant is not null)
+        {
+            return $"The provider product is a different variant ({extraVariant}).";
+        }
+
+        return null;
+    }
+
+    private static HashSet<decimal> GetPercentages(
+        string? rawName)
+    {
+        return PercentPattern
+            .Matches(rawName ?? string.Empty)
+            .Select(match =>
+                decimal.Parse(
+                    match.Groups["value"].Value,
+                    System.Globalization.CultureInfo.InvariantCulture
+                )
+            )
+            .ToHashSet();
+    }
+
+    // Rewrites equivalent product descriptions into one form.
+    //
+    // In the United States, plain "Vitamin D Milk" is whole
+    // milk; reduced-fat milks always state their fat level.
+    // Harris Teeter returns its whole milk this way.
+    private static string CanonicalizeName(
+        string normalizedName)
+    {
+        return Regex.Replace(
+            normalizedName,
+            @"\bvitamin d milk\b",
+            "vitamin d whole milk"
+        );
     }
 
     private static string NormalizeText(
