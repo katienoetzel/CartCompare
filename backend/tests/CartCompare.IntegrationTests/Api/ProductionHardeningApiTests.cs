@@ -44,6 +44,53 @@ public class ProductionHardeningApiTests
     }
 
     [Theory]
+    [InlineData(true, HttpStatusCode.Unauthorized)]
+    [InlineData(false, HttpStatusCode.TooManyRequests)]
+    public async Task LoginLimit_BehindAProxy_IsPerForwardedClientAddress(
+        bool trustForwardedHeaders, HttpStatusCode secondClientStatus)
+    {
+        // Arrange
+        using var factory =
+            new CartCompareWebApplicationFactory(
+                ConnectionString,
+                settings: new Dictionary<string, string?>
+                {
+                    ["RateLimits:AuthPerMinute"] = "1",
+                    ["ForwardedHeaders:Enabled"] = trustForwardedHeaders.ToString()
+                }
+            );
+
+        using var client = factory.CreateClient();
+
+        // Act: two shoppers behind the same proxy.
+        var first = await LoginFromAsync(client, "203.0.113.10");
+        var second = await LoginFromAsync(client, "203.0.113.20");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, first.StatusCode);
+        Assert.Equal(secondClientStatus, second.StatusCode);
+    }
+
+    private static Task<HttpResponseMessage> LoginFromAsync(HttpClient client, string clientAddress)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login")
+        {
+            Content = JsonContent.Create(new { Email = "nobody@example.com", Password = "Wrong123!" })
+        };
+        request.Headers.Add("X-Forwarded-For", clientAddress);
+        return client.SendAsync(request);
+    }
+
+    [Fact]
+    public void Startup_OutsideDevelopmentWithoutFrontendOrigin_Fails()
+    {
+        using var factory = new ProductionFactory(ConnectionString, frontendOrigin: null);
+
+        var error = Assert.Throws<InvalidOperationException>(() => factory.CreateClient());
+        Assert.Equal("Frontend:Origin must be configured outside Development.", error.Message);
+    }
+
+    [Theory]
     [InlineData("/api/dev/lowes-foods/stores?postalCode=27613")]
     [InlineData("/api/dev/kroger/nearby-chains?postalCode=27613")]
     public async Task DevelopmentControllers_OutsideDevelopment_AreNotRouted(string path)
@@ -67,7 +114,9 @@ public class ProductionHardeningApiTests
         Assert.Contains(routes, route => route.StartsWith("api/comparisons"));
     }
 
-    private sealed class ProductionFactory(string connectionString)
+    private sealed class ProductionFactory(
+        string connectionString,
+        string? frontendOrigin = "https://cartcompare.example")
         : CartCompareWebApplicationFactory(connectionString)
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -81,6 +130,10 @@ public class ProductionHardeningApiTests
             builder.UseSetting("Jwt:Key", "ProductionHardeningTestsOnlyJwtKey_2026_NotARealSecret_123456789");
             builder.UseSetting("Jwt:Issuer", "CartCompare.IntegrationTests");
             builder.UseSetting("Jwt:Audience", "CartCompare.IntegrationTests");
+            if (frontendOrigin is not null)
+            {
+                builder.UseSetting("Frontend:Origin", frontendOrigin);
+            }
         }
     }
 }

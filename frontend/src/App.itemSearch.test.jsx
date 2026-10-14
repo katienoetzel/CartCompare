@@ -72,6 +72,30 @@ describe('App item search', () => {
   )
 
   it(
+    'returns to the login form when the session has expired',
+    async () => {
+      // Arrange
+      server.use(
+        http.get(`${API_BASE_URL}/api/grocery-list`, () =>
+          new HttpResponse(null, { status: 401 })
+        )
+      )
+
+      // Act
+      render(<App />)
+
+      // Assert
+      expect(
+        await screen.findByText(/Your session has expired\. Please log in again\./)
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: 'Login' })
+      ).toBeInTheDocument()
+      expect(sessionStorage.getItem('cartcompare_token')).toBeNull()
+    }
+  )
+
+  it(
     'says when no item matches the search',
     async () => {
       // Arrange

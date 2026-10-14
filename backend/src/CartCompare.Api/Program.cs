@@ -15,12 +15,21 @@ using CartCompare.Services.Interfaces;
 using CartCompare.Services.Services;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Cloud Run collects stdout; one JSON object per line keeps the
+// structured fields (Provider, Operation, DurationMs, ...) searchable.
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddJsonConsole();
+}
 
 // ==================================================
 // Controllers
@@ -41,6 +50,23 @@ builder.Services.AddControllers(options =>
 builder.Services.AddCartCompareRateLimits(
     builder.Configuration
 );
+
+// Behind Cloud Run's proxy every request arrives over HTTP from Google's
+// address. Trusting X-Forwarded-For/-Proto restores the client IP (rate
+// limits before login are per IP) and the HTTPS scheme. Set
+// ForwardedHeaders:Enabled only behind a proxy: otherwise clients could
+// forge their address. The middleware is added in the HTTP pipeline.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto;
+
+    // The proxy appends the address it saw; take only that one.
+    options.ForwardLimit = 1;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 
 // ==================================================
@@ -98,6 +124,15 @@ var jwtKey =
     ?? throw new InvalidOperationException(
         "JWT signing key is not configured."
     );
+
+// HMAC-SHA256 needs a 256-bit key. Fail at startup rather than at
+// the first login.
+if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
+{
+    throw new InvalidOperationException(
+        "JWT signing key must be at least 32 bytes."
+    );
+}
 
 var jwtIssuer =
     builder.Configuration["Jwt:Issuer"];
@@ -251,9 +286,14 @@ builder.Services.AddScoped<KrogerPriceProvider>();
 
 builder.Services.AddScoped<IPriceProvider>(
     provider =>
-        provider.GetRequiredService<
-            KrogerPriceProvider
-        >()
+        new LoggingPriceProvider(
+            provider.GetRequiredService<
+                KrogerPriceProvider
+            >(),
+            provider.GetRequiredService<
+                ILogger<LoggingPriceProvider>
+            >()
+        )
 );
 
 builder.Services.AddSingleton<
@@ -290,9 +330,14 @@ builder.Services.AddSingleton<
 
 builder.Services.AddSingleton<IPriceProvider>(
     provider =>
-        provider.GetRequiredService<
-            LowesFoodsPriceProvider
-        >()
+        new LoggingPriceProvider(
+            provider.GetRequiredService<
+                LowesFoodsPriceProvider
+            >(),
+            provider.GetRequiredService<
+                ILogger<LoggingPriceProvider>
+            >()
+        )
 );
 
 builder.Services.AddScoped<
@@ -431,11 +476,16 @@ builder.Services.AddOpenApi();
 // CORS
 // ==================================================
 
-var frontendOrigin =
-    builder.Configuration[
-        "Frontend:Origin"
-    ]
-    ?? "http://localhost:5173";
+// Comma-separated, e.g. "https://cartcompare.vercel.app". Only
+// Development falls back to the Vite dev server.
+var frontendOrigins =
+    (builder.Configuration["Frontend:Origin"]
+        ?? (builder.Environment.IsDevelopment()
+            ? "http://localhost:5173"
+            : throw new InvalidOperationException(
+                "Frontend:Origin must be configured outside Development."
+            )))
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 builder.Services.AddCors(options =>
 {
@@ -445,7 +495,7 @@ builder.Services.AddCors(options =>
         {
             policy
                 .WithOrigins(
-                    frontendOrigin
+                    frontendOrigins
                 )
                 .AllowAnyHeader()
                 .AllowAnyMethod();
@@ -528,11 +578,20 @@ if (
 // HTTP pipeline
 // ==================================================
 
+if (app.Configuration.GetValue<bool>("ForwardedHeaders:Enabled"))
+{
+    app.UseForwardedHeaders();
+}
+
 app.UseCors("Frontend");
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
+else
+{
+    app.UseHsts();
 }
 
 app.UseHttpsRedirection();

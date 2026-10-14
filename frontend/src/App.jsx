@@ -33,6 +33,10 @@ import {
   compareStores,
 } from "./api/comparisons";
 
+import {
+  SESSION_EXPIRED_EVENT,
+  SESSION_EXPIRED_MESSAGE,
+} from "./api/apiClient";
 import CatalogSearch from "./CatalogSearch";
 
 import "./App.css";
@@ -202,7 +206,7 @@ function App() {
     }
   }
 
-  function handleLogout() {
+  function clearSession() {
     searchSequence.current += 1;
     setStores([]);
     setSearchedPostalCode("");
@@ -214,6 +218,10 @@ function App() {
     setGroceryList([]);
     setSelectedStoreIds([]);
     setComparisonResult(null);
+  }
+
+  function handleLogout() {
+    clearSession();
 
     setMessage(
       "Logged out."
@@ -221,6 +229,23 @@ function App() {
 
     setError("");
   }
+
+  // The API client clears an expired token; return to the login form.
+  // A ref keeps the listener on the latest clearSession.
+  const clearSessionRef = useRef(clearSession);
+  clearSessionRef.current = clearSession;
+
+  useEffect(() => {
+    function handleSessionExpired() {
+      clearSessionRef.current();
+      setMessage("");
+      setError(SESSION_EXPIRED_MESSAGE);
+    }
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    return () =>
+      window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+  }, []);
 
   function handleRetailerChange(event) {
     setSelectedRetailerId(event.target.value);
