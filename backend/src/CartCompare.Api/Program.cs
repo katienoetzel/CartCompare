@@ -442,6 +442,17 @@ builder.Services.AddHttpClient(
     {
         client.BaseAddress =
             new Uri(krogerBaseUrl);
+
+        // Kroger's firewall refuses requests with no User-Agent from
+        // cloud addresses (Cloud Run got 403s; home networks did not),
+        // so identify the app and ask for JSON like other clients do.
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "CartCompare/1.0 (+https://github.com/katienoetzel/CartCompare)"
+        );
+
+        client.DefaultRequestHeaders.Accept.ParseAdd(
+            "application/json"
+        );
     }
 );
 

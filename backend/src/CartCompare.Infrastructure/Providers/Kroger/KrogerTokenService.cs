@@ -85,7 +85,7 @@ public class KrogerTokenService
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new KrogerApiException("token", response.StatusCode);
+            throw await KrogerApiException.FromResponseAsync("token", response);
         }
 
         var tokenResponse =

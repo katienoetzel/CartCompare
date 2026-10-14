@@ -54,6 +54,16 @@ public class FakeKrogerHttpMessageHandler
                         .Authorization
                         ?.Parameter,
 
+                UserAgent =
+                    request.Headers
+                        .UserAgent
+                        .ToString(),
+
+                Accept =
+                    request.Headers
+                        .Accept
+                        .ToString(),
+
                 Content =
                     content
             };
@@ -118,6 +128,18 @@ public class FakeKrogerHttpRequest
         get;
         set;
     }
+
+    public string UserAgent
+    {
+        get;
+        set;
+    } = string.Empty;
+
+    public string Accept
+    {
+        get;
+        set;
+    } = string.Empty;
 
     public string? AuthorizationParameter
     {

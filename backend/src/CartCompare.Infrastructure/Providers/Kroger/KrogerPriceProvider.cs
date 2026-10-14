@@ -95,7 +95,7 @@ public class KrogerPriceProvider : IPriceProvider
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new KrogerApiException("locations", response.StatusCode);
+            throw await KrogerApiException.FromResponseAsync("locations", response);
         }
 
         var krogerResponse =
@@ -223,7 +223,10 @@ public class KrogerPriceProvider : IPriceProvider
         using var response =
             await httpClient.SendAsync(request);
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw await KrogerApiException.FromResponseAsync("product search", response);
+        }
 
         var krogerResponse =
             await response.Content
@@ -341,7 +344,10 @@ public class KrogerPriceProvider : IPriceProvider
             return null;
         }
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw await KrogerApiException.FromResponseAsync("price", response);
+        }
 
         var krogerResponse =
             await response.Content
@@ -517,7 +523,10 @@ public class KrogerPriceProvider : IPriceProvider
             return null;
         }
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw await KrogerApiException.FromResponseAsync("product", response);
+        }
 
         var krogerResponse =
             await response.Content

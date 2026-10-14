@@ -243,6 +243,18 @@ public class IntegrationsApiTests
             "scope=product.compact",
             request.Content!
         );
+
+        // Kroger's firewall rejects anonymous clients from cloud
+        // addresses; every Kroger request must identify the app.
+        Assert.StartsWith(
+            "CartCompare/1.0",
+            request.UserAgent
+        );
+
+        Assert.Equal(
+            "application/json",
+            request.Accept
+        );
     }
 
     [Fact]
