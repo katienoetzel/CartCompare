@@ -181,50 +181,61 @@ public class ComparisonPriceRefreshServiceTests
         Price = Price(DateTime.UtcNow)
     };
 
-    [Fact]
-    public async Task MultipleSafeMatches_AreAllLinkedSoTheCheapestCanWin()
+    private ProductCandidate Priced(string id, decimal? shelfPrice)
     {
-        _candidates.Setup(service => service.FindCandidatesAsync(1, 2, null))
-            .ReturnsAsync(new ProductCandidateSearchResult
-            {
-                Candidates = new() { Candidate("one"), Candidate("two") }
-            });
-        _sync.Setup(service => service.SyncMatchedAsync(1, 2, "one")).ReturnsAsync(Synced(5, "one"));
-        _sync.Setup(service => service.SyncMatchedAsync(1, 2, "two")).ReturnsAsync(Synced(6, "two"));
-        var result = await Service.RefreshAsync(_item, _store, new());
-        Assert.Equal(new HashSet<int> { 5, 6 }, result.UsableProductIds);
-        Assert.Equal("refreshed", result.Status);
+        var candidate = Candidate(id);
+        candidate.ShelfPrice = shelfPrice;
+        return candidate;
     }
 
     [Fact]
-    public async Task OneFailedSafeMatch_DoesNotHideAnotherUsableMatch()
+    public async Task MultipleSafeMatches_LinkOnlyTheCheapestBySearchPrice()
     {
         _candidates.Setup(service => service.FindCandidatesAsync(1, 2, null))
             .ReturnsAsync(new ProductCandidateSearchResult
             {
-                Candidates = new() { Candidate("one"), Candidate("two") }
+                Candidates = new() { Priced("pricey", 4.29m), Priced("unpriced", null), Priced("cheap", 2.69m) }
             });
-        _sync.Setup(service => service.SyncMatchedAsync(1, 2, "one"))
-            .ReturnsAsync(new ProductPriceSyncResult { Result = ProductPriceSyncResultType.PriceNotAvailable });
-        _sync.Setup(service => service.SyncMatchedAsync(1, 2, "two")).ReturnsAsync(Synced(6, "two"));
+        _sync.Setup(service => service.SyncMatchedAsync(1, 2, "cheap")).ReturnsAsync(Synced(6, "cheap"));
         var result = await Service.RefreshAsync(_item, _store, new());
         Assert.Equal(new HashSet<int> { 6 }, result.UsableProductIds);
+        Assert.Equal("refreshed", result.Status);
+        _sync.Verify(service => service.SyncMatchedAsync(1, 2, "cheap"), Times.Once);
+        _sync.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task CheapestWithoutUsablePrice_FallsBackToTheNextCheapest()
+    {
+        _candidates.Setup(service => service.FindCandidatesAsync(1, 2, null))
+            .ReturnsAsync(new ProductCandidateSearchResult
+            {
+                Candidates = new() { Priced("cheap", 2.69m), Priced("next", 2.99m) }
+            });
+        _sync.Setup(service => service.SyncMatchedAsync(1, 2, "cheap"))
+            .ReturnsAsync(new ProductPriceSyncResult { Result = ProductPriceSyncResultType.PriceNotAvailable });
+        _sync.Setup(service => service.SyncMatchedAsync(1, 2, "next")).ReturnsAsync(Synced(7, "next"));
+        var result = await Service.RefreshAsync(_item, _store, new());
+        Assert.Equal(new HashSet<int> { 7 }, result.UsableProductIds);
         Assert.Equal("refreshed", result.Status);
         Assert.Null(result.Message);
     }
 
     [Fact]
-    public async Task TooManySafeMatches_AreLeftForManualSelection()
+    public async Task SyncAttempts_AreCapped()
     {
         _candidates.Setup(service => service.FindCandidatesAsync(1, 2, null))
             .ReturnsAsync(new ProductCandidateSearchResult
             {
-                Candidates = new() { Candidate("one"), Candidate("two"), Candidate("three"), Candidate("four") }
+                Candidates = new() { Priced("a", 1m), Priced("b", 2m), Priced("c", 3m), Priced("d", 4m) }
             });
+        _sync.Setup(service => service.SyncMatchedAsync(1, 2, It.IsAny<string>()))
+            .ReturnsAsync(new ProductPriceSyncResult { Result = ProductPriceSyncResultType.PriceNotAvailable });
         var result = await Service.RefreshAsync(_item, _store, new());
-        Assert.Equal("ambiguous_match", result.Status);
         Assert.Empty(result.UsableProductIds);
-        _sync.VerifyNoOtherCalls();
+        Assert.Equal("price_unavailable", result.Status);
+        _sync.Verify(service => service.SyncMatchedAsync(1, 2, "d"), Times.Never);
+        _sync.Verify(service => service.SyncMatchedAsync(1, 2, It.IsAny<string>()), Times.Exactly(3));
     }
 
     [Fact]
@@ -238,14 +249,15 @@ public class ComparisonPriceRefreshServiceTests
         Assert.Equal("provider_error", (await Service.RefreshAsync(_item, _store, new())).Status);
     }
 
-    [Theory]
-    [InlineData("Harris Teeter Chocolate Whole Milk")]
-    [InlineData("Harris Teeter Lactose Free Whole Milk")]
-    [InlineData("Harris Teeter Organic Whole Milk")]
-    public async Task ExtraVariantTerms_AreNotAutomaticallyMatched(string name)
+    [Fact]
+    public async Task CandidatesTheMatcherRejected_AreNotAutomaticallyMatched()
     {
+        var variant = Candidate(name: "Harris Teeter Chocolate Whole Milk");
+        variant.IsMatch = false;
+        variant.MatchMethod = null;
+        variant.MatchConfidence = null;
         _candidates.Setup(service => service.FindCandidatesAsync(1, 2, null))
-            .ReturnsAsync(new ProductCandidateSearchResult { Candidates = new() { Candidate(name: name) } });
+            .ReturnsAsync(new ProductCandidateSearchResult { Candidates = new() { variant } });
         var result = await Service.RefreshAsync(_item, _store, new());
         Assert.Equal("match_uncertain", result.Status);
         _sync.VerifyNoOtherCalls();

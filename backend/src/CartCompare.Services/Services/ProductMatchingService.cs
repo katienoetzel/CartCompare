@@ -104,15 +104,7 @@ public class ProductMatchingService
         // we should not automatically accept "half gallon".
         if (!string.IsNullOrWhiteSpace(item.Size))
         {
-            var itemSize =
-                NormalizeSize(item.Size);
-
-            var providerSize =
-                NormalizeSize(providerProduct.Size);
-
-            if (
-                string.IsNullOrWhiteSpace(providerSize) ||
-                itemSize != providerSize)
+            if (!ProductSize.Matches(item.Size, providerProduct.Size))
             {
                 return NoMatch(
                     "The product sizes do not match."
@@ -188,9 +180,58 @@ public class ProductMatchingService
             };
         }
 
+        // One word ("Bananas") is too vague to find anywhere in a name:
+        // "Banana Squash" is not bananas. It must be the name's last
+        // word, the food the name is about, before any "(", "–" or ",".
+        // Only produce sold by the pound qualifies; plain "Milk" stays
+        // too vague to pick a fat level automatically.
+        if (
+            itemTokens.Count == 1 &&
+            ProductSize.IsPerPound(item.Size) &&
+            GetHeadToken(providerProduct.Name) == itemTokens.Single())
+        {
+            var variantReason =
+                GetVariantMismatchReason(
+                    item.Name,
+                    itemName,
+                    providerProduct.Name,
+                    providerName
+                );
+
+            if (variantReason is not null)
+            {
+                return NoMatch(variantReason);
+            }
+
+            return new ProductMatchResult
+            {
+                IsMatch = true,
+
+                MatchMethod =
+                    ProductMatchMethod.Deterministic,
+
+                MatchConfidence = 0.90m,
+
+                Reason =
+                    "The provider product name ends with the item's name."
+            };
+        }
+
         return NoMatch(
             "There is not enough deterministic evidence to match these products safely."
         );
+    }
+
+    private static string? GetHeadToken(
+        string providerName)
+    {
+        var mainName =
+            Regex.Split(providerName, @"\(|\s[–—-]\s|,")[0];
+
+        return GetNameTokenList(
+                NormalizeText(mainName)
+            )
+            .LastOrDefault();
     }
 
     private static ProductMatchResult NoMatch(
@@ -228,7 +269,26 @@ public class ProductMatchingService
             "almond",
             "oat",
             "soy",
-            "coconut"
+            "coconut",
+            "decaf",
+            "decaffeinated",
+            "instant",
+            "whipped",
+            "spreadable",
+            "gluten",
+            "keto",
+            "wheat",
+            "grain",
+            "frozen",
+            "dried",
+            "cooked",
+            "breaded",
+            "seasoned",
+            "marinated",
+            "spicy",
+            // Egg grades: "Large Eggs" must not match extra large or jumbo.
+            "extra",
+            "jumbo"
         };
 
     // Matches fat percentages such as "2%", "1 %", or "0.5%".
@@ -330,6 +390,15 @@ public class ProductMatchingService
     private static HashSet<string> GetNameTokens(
         string normalizedName)
     {
+        return GetNameTokenList(normalizedName)
+            .ToHashSet(
+                StringComparer.OrdinalIgnoreCase
+            );
+    }
+
+    private static List<string> GetNameTokenList(
+        string normalizedName)
+    {
         return normalizedName
             .Split(
                 ' ',
@@ -339,9 +408,28 @@ public class ProductMatchingService
                 token.Length > 1 ||
                 token.Any(char.IsDigit)
             )
-            .ToHashSet(
-                StringComparer.OrdinalIgnoreCase
-            );
+            .Select(Singular)
+            .ToList();
+    }
+
+    // "Chicken Breasts" and "Chicken Breast" name the same food.
+    // Words ending in "ss" (boneless, skinless) are not plurals.
+    private static string Singular(
+        string token)
+    {
+        if (token.Length <= 3 || token.Any(char.IsDigit))
+        {
+            return token;
+        }
+
+        if (token.EndsWith("ies"))
+        {
+            return token[..^3] + "y";
+        }
+
+        return token.EndsWith('s') && !token.EndsWith("ss")
+            ? token[..^1]
+            : token;
     }
 
     private static string NormalizeUpc(
@@ -357,38 +445,5 @@ public class ProductMatchingService
                 .Where(char.IsDigit)
                 .ToArray()
         );
-    }
-
-    private static string NormalizeSize(
-        string? size)
-    {
-        if (string.IsNullOrWhiteSpace(size))
-        {
-            return string.Empty;
-        }
-
-        var normalized =
-            size
-                .Trim()
-                .ToLowerInvariant();
-
-        normalized =
-            normalized
-                .Replace("gallons", "gal")
-                .Replace("gallon", "gal")
-                .Replace("ounces", "oz")
-                .Replace("ounce", "oz")
-                .Replace("pounds", "lb")
-                .Replace("pound", "lb")
-                .Replace("count", "ct");
-
-        normalized =
-            Regex.Replace(
-                normalized,
-                @"\s+",
-                ""
-            );
-
-        return normalized;
     }
 }

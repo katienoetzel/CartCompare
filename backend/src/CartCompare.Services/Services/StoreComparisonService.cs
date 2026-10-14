@@ -137,8 +137,19 @@ public class StoreComparisonService : IStoreComparisonService
                     continue;
                 }
 
+                // A per-lb item is bought by the pound. A weighed product is
+                // already priced per pound; a fixed package is converted.
+                var unitPrice = effectivePrice.Amount.Value;
+                if (ProductSize.IsPerPound(item.Size) &&
+                    !ProductSize.IsPerPound(retailerProduct.Size))
+                {
+                    var pounds = ProductSize.Pounds(retailerProduct.Size);
+                    if (pounds is null or <= 0) continue;
+                    unitPrice = decimal.Round(unitPrice / pounds.Value, 2);
+                }
+
                 var lineTotal =
-                    effectivePrice.Amount.Value *
+                    unitPrice *
                     groceryListItem.Quantity;
 
                 if (
@@ -161,7 +172,7 @@ public class StoreComparisonService : IStoreComparisonService
                                 retailerProduct.Name,
 
                             UnitPrice =
-                                effectivePrice.Amount.Value,
+                                unitPrice,
 
                             PriceType =
                                 effectivePrice.PriceType.Value,

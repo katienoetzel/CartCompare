@@ -247,14 +247,7 @@ public class KrogerPriceProvider : IPriceProvider
             }
 
             var size =
-                product.Items?
-                    .Select(item => item.Size)
-                    .FirstOrDefault(
-                        itemSize =>
-                            !string.IsNullOrWhiteSpace(
-                                itemSize
-                            )
-                    );
+                GetSize(product);
 
             results.Add(
                 new ProviderProduct
@@ -272,7 +265,16 @@ public class KrogerPriceProvider : IPriceProvider
                         size,
 
                     Upc =
-                        product.Upc
+                        product.Upc,
+
+                    ShelfPrice =
+                        product.Items?
+                            .SelectMany(item => new[]
+                            {
+                                NormalizePrice(item.Price?.Regular),
+                                NormalizePrice(item.Price?.Promo)
+                            })
+                            .Min()
                 }
             );
         }
@@ -391,6 +393,31 @@ public class KrogerPriceProvider : IPriceProvider
                 null
         };
     }
+    // A weighed item's listed size is only a typical weight
+    // and its price is per pound, so describe it as "per lb".
+    private static string? GetSize(
+        KrogerProduct product)
+    {
+        if (
+            product.Items?.Any(item =>
+                string.Equals(
+                    item.SoldBy,
+                    "WEIGHT",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            ) == true)
+        {
+            return "per lb";
+        }
+
+        return product.Items?
+            .Select(item => item.Size)
+            .FirstOrDefault(
+                itemSize =>
+                    !string.IsNullOrWhiteSpace(itemSize)
+            );
+    }
+
     private static decimal? NormalizePrice(
     decimal? price)
     {
@@ -508,12 +535,7 @@ public class KrogerPriceProvider : IPriceProvider
         }
 
         var size =
-            product.Items?
-                .Select(item => item.Size)
-                .FirstOrDefault(
-                    itemSize =>
-                        !string.IsNullOrWhiteSpace(itemSize)
-                );
+            GetSize(product);
 
         return new ProviderProduct
         {

@@ -713,7 +713,10 @@ public sealed class LowesFoodsPriceProvider
                 record.Size,
 
             Upc =
-                record.Upc
+                record.Upc,
+
+            ShelfPrice =
+                record.Price
         };
     }
 
@@ -786,6 +789,28 @@ public sealed class LowesFoodsPriceProvider
         BuildSize(
             JsonElement product)
     {
+        // Weighed products report "0 lb" as their size; their
+        // chargePrice is per pound, so describe them that way.
+        if (
+            product.TryGetProperty(
+                "chargeByWeight",
+                out var chargeByWeight
+            )
+            &&
+            chargeByWeight.ValueKind
+            ==
+            JsonValueKind.True
+        )
+        {
+            return "per " + (
+                GetOptionalString(
+                    product,
+                    "chargeByUOM"
+                )
+                ?? "lb"
+            );
+        }
+
         var packageSize =
             TryGetDecimal(
                 product,

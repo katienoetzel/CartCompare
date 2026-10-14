@@ -34,6 +34,10 @@ public class KrogerProductItem
     [JsonPropertyName("size")]
     public string? Size { get; set; }
 
+    // "UNIT" or "WEIGHT"; weighed items are priced per pound.
+    [JsonPropertyName("soldBy")]
+    public string? SoldBy { get; set; }
+
     [JsonPropertyName("inventory")]
     public KrogerInventory? Inventory { get; set; }
 

@@ -738,6 +738,101 @@ public class ProductMatchingServiceTests
             .ReturnsAsync(products);
     }
 
+    // Real products from the first basket run (Lowe's Foods and Harris Teeter, 2026-10-13).
+    [Theory]
+    [InlineData("Salted Butter", "1 lb", "Highland Crest Salted Butter", "16 oz")]
+    [InlineData("Salted Butter", "1 lb", "Harris Teeter™ Salted Butter Quarters", "4 ct / 16 oz")]
+    [InlineData("Long Grain White Rice", "2 lb", "Lowes Foods Long Grain White Rice 32 oz", "32 oz")]
+    [InlineData("Whole Milk", "1 gallon", "Harris Teeter Whole Milk", "128 fl oz")]
+    [InlineData("Whole Milk", "1/2 gallon", "Harris Teeter® Vitamin D Whole Milk", "1/2 gal")]
+    [InlineData("Large Eggs", "12 count", "Lowes Foods Grade A Large White Dozen Eggs", "12 ct")]
+    [InlineData("Large Eggs", "1 dozen", "Harris Teeter Large Grade A White Eggs", "12 ct")]
+    [InlineData("Ground Coffee", "12 oz", "Dunkin’ Original Blend Medium Roast Ground Coffee", "12 ounces")]
+    [InlineData("Corn Flakes Cereal", "12 oz", "Kellogg's Corn Flakes Cereal Large Size 12 oz", "12 oz")]
+    [InlineData("Boneless Skinless Chicken Breast", "1 lb", "PERDUE® Fresh Boneless Skinless Chicken Breasts", "1 lb")]
+    [InlineData("Boneless Skinless Chicken Breast", "1 lb", "Just Bare Boneless & Skinless Chicken Breast Fillets", "16 oz")]
+    public async Task EvaluateAsync_WhenSizesAreEquivalentAndNameWordsVary_ReturnsDeterministicMatch(
+        string itemName, string itemSize, string productName, string productSize)
+    {
+        // Arrange
+        var item = CreateItem(id: 1, name: itemName, size: itemSize);
+        var providerProduct = CreateProviderProduct(name: productName, size: productSize);
+        SetupExistingProducts(item.Id, new List<RetailerProduct>());
+
+        // Act
+        var result = await _service.EvaluateAsync(item, providerProduct);
+
+        // Assert
+        Assert.True(result.IsMatch, result.Reason);
+        Assert.Equal(ProductMatchMethod.Deterministic, result.MatchMethod);
+    }
+
+    [Theory]
+    [InlineData("Salted Butter", "1 lb", "Challenge® Salted Butter Sticks", "8 oz")]
+    [InlineData("Whole Milk", "1 gallon", "Harris Teeter® Vitamin D Whole Milk", "1/2 gal")]
+    [InlineData("Whole Milk", "1 gallon", "Harris Teeter Whole Milk", "1 lb")]
+    [InlineData("Large Eggs", "12 count", "Large Eggs", "18 ct")]
+    public async Task EvaluateAsync_WhenAmountsOrDimensionsDiffer_ReturnsNoMatch(
+        string itemName, string itemSize, string productName, string productSize)
+    {
+        // Arrange
+        var item = CreateItem(id: 1, name: itemName, size: itemSize);
+        var providerProduct = CreateProviderProduct(name: productName, size: productSize);
+        SetupExistingProducts(item.Id, new List<RetailerProduct>());
+
+        // Act
+        var result = await _service.EvaluateAsync(item, providerProduct);
+
+        // Assert
+        Assert.False(result.IsMatch);
+        Assert.Equal("The product sizes do not match.", result.Reason);
+    }
+
+    [Theory]
+    [InlineData("Large Eggs", "12 ct", "Eggland's Best Classic Extra Large White Eggs, 12 Count", "extra")]
+    [InlineData("Salted Butter", "1 lb", "Breakstone's Kosher Salted Whipped Butter", "whipped")]
+    [InlineData("Ground Coffee", "12 oz", "Folgers Decaf Classic Roast Ground Coffee", "decaf")]
+    [InlineData("White Sandwich Bread", "20 oz", "Nature's Own Whole Grain White Sandwich Bread", "grain")]
+    [InlineData("Boneless Skinless Chicken Breast", "1 lb", "Tyson Breaded Boneless Skinless Chicken Breasts", "breaded")]
+    public async Task EvaluateAsync_WhenProductIsAnotherVariantOfTheFood_ReturnsNoMatch(
+        string itemName, string itemSize, string productName, string variant)
+    {
+        // Arrange
+        var item = CreateItem(id: 1, name: itemName, size: itemSize);
+        var providerProduct = CreateProviderProduct(name: productName, size: itemSize);
+        SetupExistingProducts(item.Id, new List<RetailerProduct>());
+
+        // Act
+        var result = await _service.EvaluateAsync(item, providerProduct);
+
+        // Assert
+        Assert.False(result.IsMatch);
+        Assert.Contains(variant, result.Reason);
+    }
+
+    [Theory]
+    [InlineData("Fresh Bunch of Bananas – 5-7 Bananas", "per lb", true)]
+    [InlineData("Banana (Bananas are sold individually) (Avg. 0.4lb)", "per lb", true)]
+    [InlineData("Banana Squash", "per lb", false)]
+    [InlineData("Fresh Yellow Banana Peppers", "per lb", false)]
+    [InlineData("Harris Teeter Farmers Market™ Banana Chips", "7 oz", false)]
+    [InlineData("Simple Truth® Freeze-Dried Bananas", "1.5 oz", false)]
+    [InlineData("Fresh Bunch of Organic Bananas – 5-7 Bananas", "per lb", false)]
+    public async Task EvaluateAsync_WhenOneWordItemIsSoldPerPound_MatchesOnlyProductsNamedForIt(
+        string productName, string productSize, bool expectedMatch)
+    {
+        // Arrange
+        var item = CreateItem(id: 1, name: "Bananas", size: "per lb");
+        var providerProduct = CreateProviderProduct(name: productName, size: productSize);
+        SetupExistingProducts(item.Id, new List<RetailerProduct>());
+
+        // Act
+        var result = await _service.EvaluateAsync(item, providerProduct);
+
+        // Assert
+        Assert.Equal(expectedMatch, result.IsMatch);
+    }
+
     private static Item CreateItem(
         int id,
         string name,

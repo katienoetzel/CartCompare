@@ -368,6 +368,44 @@ public class StoreComparisonServiceTests
     }
 
     [Fact]
+    public async Task CompareStoreAsync_WhenItemIsPerPound_ComparesPackagesAndWeighedProductsPerPound()
+    {
+        // Arrange
+        var store = CreateStore();
+        var item = CreateItem(name: "Boneless Skinless Chicken Breast");
+        item.Size = "per lb";
+        var listItem = CreateGroceryListItem(itemId: item.Id, quantity: 2);
+
+        // $4.99 for 1.25 lb = $3.99/lb; the weighed product is $4.49/lb.
+        var package = CreateRetailerProduct(id: 100, itemId: item.Id, retailerId: store.RetailerId, name: "Chicken Breasts");
+        package.Size = "1.25 lb";
+        var weighed = CreateRetailerProduct(id: 101, itemId: item.Id, retailerId: store.RetailerId, name: "Chicken Breast Fillets");
+        weighed.Size = "per lb";
+        var noWeight = CreateRetailerProduct(id: 102, itemId: item.Id, retailerId: store.RetailerId, name: "Chicken Breast Tray");
+        noWeight.Size = "4 ct";
+
+        SetupStoreAndList(20, store, new List<GroceryListItem> { listItem });
+        _itemRepositoryMock.Setup(repository => repository.GetByIdAsync(item.Id)).ReturnsAsync(item);
+        _retailerProductRepositoryMock.Setup(repository => repository.GetByItemIdAsync(item.Id))
+            .ReturnsAsync(new List<RetailerProduct> { package, weighed, noWeight });
+        _priceServiceMock.Setup(service => service.GetEffectivePriceAsync(20, package.Id, store.Id))
+            .ReturnsAsync(CreateEffectivePrice(4.99m, EffectivePriceType.Regular));
+        _priceServiceMock.Setup(service => service.GetEffectivePriceAsync(20, weighed.Id, store.Id))
+            .ReturnsAsync(CreateEffectivePrice(4.49m, EffectivePriceType.Regular));
+        _priceServiceMock.Setup(service => service.GetEffectivePriceAsync(20, noWeight.Id, store.Id))
+            .ReturnsAsync(CreateEffectivePrice(1.00m, EffectivePriceType.Regular));
+
+        // Act
+        var result = await _service.CompareStoreAsync(20, store.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(package.Id, result.Items[0].RetailerProductId);
+        Assert.Equal(3.99m, result.Items[0].UnitPrice);
+        Assert.Equal(7.98m, result.Items[0].LineTotal);
+    }
+
+    [Fact]
     public async Task CompareStoreAsync_IgnoresInactiveAndWrongRetailerProducts()
     {
         // Arrange

@@ -210,6 +210,9 @@ public class ProductCandidateService
                     Upc =
                         providerProduct.Upc,
 
+                    ShelfPrice =
+                        providerProduct.ShelfPrice,
+
                     IsMatch =
                         matchResult.IsMatch,
 

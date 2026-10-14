@@ -14,6 +14,8 @@ public class ProductCandidate
 
     public string? Upc { get; set; }
 
+    public decimal? ShelfPrice { get; set; }
+
     public bool IsMatch { get; set; }
 
     public ProductMatchMethod? MatchMethod { get; set; }

@@ -9,8 +9,8 @@ namespace CartCompare.Services.Services;
 public class ComparisonPriceRefreshService : IComparisonPriceRefreshService
 {
     public static readonly TimeSpan PriceLifetime = TimeSpan.FromHours(6);
-    // Beyond this many safe matches the search is too broad to trust.
-    private const int MaxAutomaticMatches = 3;
+    // Each attempt costs provider calls; stop after this many unusable matches.
+    private const int MaxSyncAttempts = 3;
     private readonly IPriceService _prices;
     private readonly IProductCandidateService _candidates;
     private readonly IProductPriceSyncService _sync;
@@ -108,17 +108,18 @@ public class ComparisonPriceRefreshService : IComparisonPriceRefreshService
             if (upc.Count > 0) safe = upc;
             if (safe.Count == 0)
                 return Failure(search.Candidates.Count == 0 ? "no_match" : "match_uncertain");
-            if (safe.Count > MaxAutomaticMatches) return Failure("ambiguous_match");
 
-            // Every safe match is an acceptable product, so link them all;
-            // the comparison then prices the item at the cheapest one.
+            // Every safe match is an acceptable product, so link the cheapest
+            // by its search price. If that one has no usable price, try the next.
             var result = new ComparisonPriceRefreshResult();
-            foreach (var candidate in safe)
-                ApplySync(result, await _sync.SyncMatchedAsync(item.Id, store.Id, candidate.ExternalProductId));
-            if (result.UsableProductIds.Count > 0 && result.Message is not null)
+            foreach (var candidate in safe
+                         .OrderBy(candidate => candidate.ShelfPrice ?? decimal.MaxValue)
+                         .Take(MaxSyncAttempts))
             {
-                result.Status = "refreshed";
-                result.Message = null;
+                var attempt = new ComparisonPriceRefreshResult();
+                ApplySync(attempt, await _sync.SyncMatchedAsync(item.Id, store.Id, candidate.ExternalProductId));
+                if (attempt.UsableProductIds.Count > 0) return attempt;
+                result = attempt;
             }
             return result;
         }
