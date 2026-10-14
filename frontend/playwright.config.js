@@ -54,6 +54,14 @@ export default defineConfig({
         E2E__Enabled:
           'true',
 
+        // e2e/comparison.spec.js sets up the catalog as this admin.
+        Admin__Email:
+          'e2e-admin@example.com',
+
+        // Tests and their retries log in more often than a person.
+        RateLimits__AuthPerMinute:
+          '1000',
+
         ASPNETCORE_ENVIRONMENT:
           'Development',
       },

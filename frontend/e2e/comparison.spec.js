@@ -23,6 +23,62 @@ async function readJson(
     : null
 }
 
+// Must match Admin__Email in playwright.config.js.
+const ADMIN_EMAIL =
+  'e2e-admin@example.com'
+
+const ADMIN_PASSWORD =
+  'CartCompare123'
+
+async function createAdminHeaders(
+  request
+) {
+  // The database is reset when the API starts, but test retries
+  // reuse it, so the admin may already be registered. Any real
+  // problem surfaces in the login below.
+  await request.post(
+    `${API_URL}/api/auth/register`,
+    {
+      data: {
+        firstName:
+          'Playwright',
+        lastName:
+          'Admin',
+        email:
+          ADMIN_EMAIL,
+        password:
+          ADMIN_PASSWORD,
+      },
+    }
+  )
+
+  const loginResponse =
+    await request.post(
+      `${API_URL}/api/auth/login`,
+      {
+        data: {
+          email:
+            ADMIN_EMAIL,
+          password:
+            ADMIN_PASSWORD,
+        },
+      }
+    )
+
+  const loginData =
+    await readJson(
+      loginResponse,
+      'Login admin'
+    )
+
+  expect(loginData.token).toBeTruthy()
+
+  return {
+    Authorization:
+      `Bearer ${loginData.token}`,
+  }
+}
+
 test(
   'user can build a grocery list and compare two stores',
   async ({
@@ -74,33 +130,12 @@ test(
       'Register user'
     )
 
-    const loginResponse =
-      await request.post(
-        `${API_URL}/api/auth/login`,
-        {
-          data: {
-            email,
-            password,
-          },
-        }
+    // Catalog, store and price setup is admin-only, so it runs as the
+    // admin account named by Admin__Email in playwright.config.js.
+    const headers =
+      await createAdminHeaders(
+        request
       )
-
-    const loginData =
-      await readJson(
-        loginResponse,
-        'Login user'
-      )
-
-    const token =
-      loginData.token ??
-      loginData.accessToken
-
-    expect(token).toBeTruthy()
-
-    const headers = {
-      Authorization:
-        `Bearer ${token}`,
-    }
 
     // ---------------------------------
     // Arrange: retailer
@@ -379,7 +414,7 @@ test(
 
     const catalogItem =
       page
-        .getByRole('listitem')
+        .getByRole('article')
         .filter({
           hasText:
             itemName,
@@ -500,8 +535,12 @@ test(
       storeTwoCheckbox
     ).toBeVisible()
 
-    await storeOneCheckbox.click()
-    await storeTwoCheckbox.click()
+    // The checkbox sits under the styled store card; shoppers click the card.
+    await page.getByText(storeOneName).click()
+    await page.getByText(storeTwoName).click()
+
+    await expect(storeOneCheckbox).toBeChecked()
+    await expect(storeTwoCheckbox).toBeChecked()
 
     await expect(
       page.getByText(
