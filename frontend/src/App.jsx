@@ -33,6 +33,8 @@ import {
   compareStores,
 } from "./api/comparisons";
 
+import CatalogSearch from "./CatalogSearch";
+
 import "./App.css";
 
 function App() {
@@ -41,6 +43,7 @@ function App() {
 
   const [items, setItems] =
     useState([]);
+  const [itemQuery, setItemQuery] = useState("");
 
   const [groceryList, setGroceryList] =
     useState([]);
@@ -285,6 +288,28 @@ function App() {
     }
   }
 
+  async function handleCatalogItemCreated(item, created) {
+    setItems((current) =>
+      current.some((existing) => existing.id === item.id)
+        ? current
+        : [...current, item].sort((a, b) => a.name.localeCompare(b.name))
+    );
+    setItemQuery("");
+
+    try {
+      setError("");
+      await setGroceryListQuantity(item.id, 1);
+      await refreshGroceryList();
+      setMessage(
+        created
+          ? `Added ${item.name} to the catalog and your list.`
+          : `${item.name} was already in the catalog; added it to your list.`
+      );
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   async function handleRemoveItem(
     itemId
   ) {
@@ -371,6 +396,13 @@ function App() {
   const visibleStores = selectedRetailerId
     ? stores.filter((store) => String(store.retailerId) === selectedRetailerId)
     : stores;
+
+  // Every word must appear somewhere in the item's name, brand, size or category.
+  const itemQueryWords = itemQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const filteredItems = items.filter((item) => {
+    const text = [item.name, item.brand, item.size, item.category].join(" ").toLowerCase();
+    return itemQueryWords.every((word) => text.includes(word));
+  });
 
   return (
     <div className="app-shell">
@@ -667,13 +699,29 @@ function App() {
                   </div>
                 </div>
 
+                {items.length > 0 && (
+                  <label className="retailer-field item-search">
+                    <span>Search items</span>
+                    <input
+                      type="search"
+                      value={itemQuery}
+                      onChange={(event) => setItemQuery(event.target.value)}
+                      placeholder="Milk, eggs, coffee..."
+                    />
+                  </label>
+                )}
+
                 {items.length === 0 ? (
                   <p className="empty-state">
                     No items found.
                   </p>
+                ) : filteredItems.length === 0 ? (
+                  <p className="empty-state">
+                    No items match "{itemQuery.trim()}".
+                  </p>
                 ) : (
                   <div className="item-list">
-                    {items.map(
+                    {filteredItems.map(
                       (item) => (
                         <article
                           className="item-card"
@@ -747,6 +795,12 @@ function App() {
                     )}
                   </div>
                 )}
+
+                <CatalogSearch
+                  query={itemQuery}
+                  stores={stores}
+                  onItemCreated={handleCatalogItemCreated}
+                />
               </section>
 
               <section className="panel grocery-list-panel">

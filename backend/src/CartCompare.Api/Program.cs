@@ -223,6 +223,11 @@ builder.Services.AddScoped<
 >();
 
 builder.Services.AddScoped<
+    ICatalogService,
+    CatalogService
+>();
+
+builder.Services.AddScoped<
     IPriceProviderResolver,
     PriceProviderResolver
 >();

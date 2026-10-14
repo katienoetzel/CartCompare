@@ -936,3 +936,58 @@
   order: 3;
   color: var(--warning-text);
 }
+
+.item-search {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.catalog-search {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.catalog-hint {
+  margin-top: 16px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.catalog-results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.catalog-results h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.catalog-results p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.catalog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.catalog-form .retailer-field {
+  width: 100%;
+}
+
+.catalog-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
