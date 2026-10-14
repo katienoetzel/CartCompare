@@ -291,6 +291,11 @@ builder.Services.AddScoped<
 >();
 
 builder.Services.AddScoped<
+    IComparisonPriceRefreshService,
+    ComparisonPriceRefreshService
+>();
+
+builder.Services.AddScoped<
     IStoreComparisonService,
     StoreComparisonService
 >();

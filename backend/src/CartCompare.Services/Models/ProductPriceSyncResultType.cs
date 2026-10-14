@@ -10,5 +10,6 @@ public enum ProductPriceSyncResultType
     ProviderProductNotFound,
     ProductMatchedToDifferentItem,
     PriceNotAvailable,
-    PriceSyncFailed
+    PriceSyncFailed,
+    AutomaticMatchRejected
 }

@@ -45,13 +45,24 @@ public class StoreComparisonServiceTests
         _priceServiceMock =
             new Mock<IPriceService>();
 
+        var refresh = new Mock<IComparisonPriceRefreshService>();
+        refresh.Setup(service => service.RefreshAsync(
+                It.IsAny<Item>(), It.IsAny<StoreLocation>(), It.IsAny<List<RetailerProduct>>()))
+            .ReturnsAsync((Item item, StoreLocation store, List<RetailerProduct> products) =>
+            {
+                var result = new ComparisonPriceRefreshResult { Status = "cached" };
+                result.UsableProductIds.UnionWith(products.Select(product => product.Id));
+                return result;
+            });
+
         _service =
             new StoreComparisonService(
                 _groceryListRepositoryMock.Object,
                 _itemRepositoryMock.Object,
                 _storeLocationRepositoryMock.Object,
                 _retailerProductRepositoryMock.Object,
-                _priceServiceMock.Object
+                _priceServiceMock.Object,
+                refresh.Object
             );
     }
 

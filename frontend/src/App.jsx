@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -25,7 +26,7 @@ import {
 } from "./api/groceryList";
 
 import {
-  getStoresByRetailer,
+  searchNearbyStores,
 } from "./api/stores";
 
 import {
@@ -46,6 +47,11 @@ function App() {
 
   const [stores, setStores] =
     useState([]);
+  const [postalCode, setPostalCode] = useState("");
+  const [searchedPostalCode, setSearchedPostalCode] = useState("");
+  const [failedRetailers, setFailedRetailers] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchSequence = useRef(0);
 
   const [
     comparisonResult,
@@ -121,27 +127,6 @@ function App() {
     refreshGroceryList();
   }, [loggedIn]);
 
-  useEffect(() => {
-    if (!selectedRetailerId) {
-      return;
-    }
-
-    async function loadStores() {
-      try {
-        const data =
-          await getStoresByRetailer(
-            selectedRetailerId
-          );
-
-        setStores(data);
-      } catch (err) {
-        setError(err.message);
-      }
-    }
-
-    loadStores();
-  }, [selectedRetailerId]);
-
   async function refreshGroceryList() {
     try {
       const data =
@@ -198,6 +183,11 @@ function App() {
   }
 
   function handleLogout() {
+    searchSequence.current += 1;
+    setStores([]);
+    setSearchedPostalCode("");
+    setFailedRetailers([]);
+    setIsSearching(false);
     logout();
 
     setLoggedIn(false);
@@ -213,17 +203,37 @@ function App() {
   }
 
   function handleRetailerChange(event) {
-    const retailerId =
-      event.target.value;
+    setSelectedRetailerId(event.target.value);
+  }
 
-    setSelectedRetailerId(
-      retailerId
-    );
-
+  async function handleStoreSearch(event) {
+    event.preventDefault();
+    if (isComparing || isSearching) return;
+    const zip = postalCode.trim();
+    if (!/^\d{5}$/.test(zip)) {
+      setError("Enter a five-digit US ZIP code.");
+      return;
+    }
+    const requestId = ++searchSequence.current;
+    setError("");
+    setMessage("");
     setStores([]);
+    setSearchedPostalCode("");
+    setFailedRetailers([]);
     setSelectedStoreIds([]);
     setComparisonResult(null);
-    setError("");
+    setIsSearching(true);
+    try {
+      const result = await searchNearbyStores(zip);
+      if (requestId !== searchSequence.current) return;
+      setStores(result.stores ?? []);
+      setFailedRetailers(result.failedRetailers ?? []);
+      setSearchedPostalCode(zip);
+    } catch (err) {
+      if (requestId === searchSequence.current) setError(err.message);
+    } finally {
+      if (requestId === searchSequence.current) setIsSearching(false);
+    }
   }
 
   function handleQuantityChange(
@@ -357,6 +367,10 @@ function App() {
       setIsComparing(false);
     }
   }
+
+  const visibleStores = selectedRetailerId
+    ? stores.filter((store) => String(store.retailerId) === selectedRetailerId)
+    : stores;
 
   return (
     <div className="app-shell">
@@ -826,60 +840,66 @@ function App() {
                   </h2>
 
                   <p className="panel-description">
-                    Pick the locations
-                    you want included in
+                    Find nearby locations,
+                    then pick stores for
                     your comparison.
                   </p>
                 </div>
 
-                <label className="retailer-field">
-                  <span>
-                    Retailer
-                  </span>
-
-                  <select
-                    value={
-                      selectedRetailerId
-                    }
-                    onChange={
-                      handleRetailerChange
-                    }
-                  >
-                    <option value="">
-                      Select a retailer
-                    </option>
-
-                    {retailers.map(
-                      (retailer) => (
-                        <option
-                          key={
-                            retailer.id
-                          }
-                          value={
-                            retailer.id
-                          }
-                        >
-                          {
-                            retailer.name
-                          }
+                <div className="store-search-controls">
+                  <form className="store-search-form" onSubmit={handleStoreSearch}>
+                    <label className="retailer-field">
+                      <span>ZIP code</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="postal-code"
+                        maxLength={5}
+                        value={postalCode}
+                        onChange={(event) => setPostalCode(event.target.value)}
+                        placeholder="27613"
+                      />
+                    </label>
+                    <button
+                      className="button button-secondary"
+                      type="submit"
+                      disabled={isSearching || isComparing}
+                    >
+                      {isSearching ? "Searching..." : "Find Stores"}
+                    </button>
+                  </form>
+                  <label className="retailer-field">
+                    <span>Retailer</span>
+                    <select value={selectedRetailerId} onChange={handleRetailerChange}>
+                      <option value="">All retailers</option>
+                      {retailers.map((retailer) => (
+                        <option key={retailer.id} value={retailer.id}>
+                          {retailer.name}
                         </option>
-                      )
-                    )}
-                  </select>
-                </label>
+                      ))}
+                    </select>
+                  </label>
+                </div>
               </div>
 
-              {selectedRetailerId &&
-                stores.length === 0 && (
-                  <p className="empty-state">
-                    No stores found for
-                    this retailer.
-                  </p>
-                )}
+              {isSearching && <p role="status">Finding nearby stores...</p>}
+              {failedRetailers.length > 0 && (
+                <p className="alert alert-warning" role="status">
+                  Could not update stores for: {failedRetailers.map(
+                    (retailer) => retailer.name
+                  ).join(", ")}.
+                </p>
+              )}
+              {searchedPostalCode && !isSearching && visibleStores.length === 0 && (
+                <p className="empty-state">
+                  No nearby stores found for ZIP code {searchedPostalCode}
+                  {selectedRetailerId ? " at this retailer" : ""}.
+                </p>
+              )}
 
-              {stores.length > 0 && (
+              {visibleStores.length > 0 && (
                 <div className="store-grid">
-                  {stores.map(
+                  {visibleStores.map(
                     (store) => {
                       const isSelected =
                         selectedStoreIds.includes(
@@ -916,6 +936,7 @@ function App() {
                           </div>
 
                           <div className="store-details">
+                            <span>{store.retailerName}</span>
                             <strong>
                               {store.name ??
                                 "Store"}

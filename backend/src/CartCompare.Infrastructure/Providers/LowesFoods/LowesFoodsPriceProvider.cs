@@ -21,14 +21,10 @@ public sealed class LowesFoodsPriceProvider
         _postalCodeGeocoder;
 
     private readonly ConcurrentDictionary<
-        string,
+        (string StoreId, string ProductId),
         LowesFoodsProductRecord
     >
-        _productCache =
-            new(
-                StringComparer
-                    .OrdinalIgnoreCase
-            );
+        _productCache = new();
 
     public LowesFoodsPriceProvider(
         LowesFoodsSessionClient sessionClient,
@@ -135,7 +131,7 @@ public sealed class LowesFoodsPriceProvider
         )
         {
             _productCache[
-                record.ExternalProductId
+                (externalLocationId, record.ExternalProductId)
             ] =
                 record;
         }
@@ -250,7 +246,7 @@ public sealed class LowesFoodsPriceProvider
 
         if (
             _productCache.TryGetValue(
-                trimmedProductId,
+                (externalLocationId, trimmedProductId),
                 out var cached
             )
         )
@@ -280,14 +276,16 @@ public sealed class LowesFoodsPriceProvider
             )
             {
                 _productCache[
-                    trimmedProductId
+                    (externalLocationId, trimmedProductId)
                 ] =
                     exactRefreshed;
 
                 return exactRefreshed;
             }
 
-            return cached;
+            // A record from an earlier search is not a current store price.
+            _productCache.TryRemove((externalLocationId, trimmedProductId), out _);
+            return null;
         }
 
         // Fallback for a provider product ID that was not
@@ -317,7 +315,7 @@ public sealed class LowesFoodsPriceProvider
         if (exact is not null)
         {
             _productCache[
-                trimmedProductId
+                (externalLocationId, trimmedProductId)
             ] =
                 exact;
         }

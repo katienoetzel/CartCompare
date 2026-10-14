@@ -20,6 +20,7 @@ public class StoreComparisonService : IStoreComparisonService
         _retailerProductRepository;
 
     private readonly IPriceService _priceService;
+    private readonly IComparisonPriceRefreshService _priceRefresh;
 
 
     public StoreComparisonService(
@@ -27,18 +28,23 @@ public class StoreComparisonService : IStoreComparisonService
         IItemRepository itemRepository,
         IStoreLocationRepository storeLocationRepository,
         IRetailerProductRepository retailerProductRepository,
-        IPriceService priceService)
+        IPriceService priceService,
+        IComparisonPriceRefreshService priceRefresh)
     {
         _groceryListRepository = groceryListRepository;
         _itemRepository = itemRepository;
         _storeLocationRepository = storeLocationRepository;
         _retailerProductRepository = retailerProductRepository;
         _priceService = priceService;
+        _priceRefresh = priceRefresh;
     }
 
-    public async Task<StoreComparisonResult?> CompareStoreAsync(
-        int userId,
-        int storeLocationId)
+    // The legacy GET endpoint remains a read of saved prices.
+    public Task<StoreComparisonResult?> CompareStoreAsync(int userId, int storeLocationId) =>
+        CompareStoreCoreAsync(userId, storeLocationId, false);
+
+    private async Task<StoreComparisonResult?> CompareStoreCoreAsync(
+        int userId, int storeLocationId, bool refreshPrices)
     {
         var store =
             await _storeLocationRepository.GetByIdAsync(
@@ -99,6 +105,17 @@ public class StoreComparisonService : IStoreComparisonService
                         p.RetailerId == store.RetailerId && p.IsActive)
                     .ToList();
 
+            var refresh = new ComparisonPriceRefreshResult { Status = "saved" };
+            if (refreshPrices)
+            {
+                refresh = await _priceRefresh.RefreshAsync(item, store, storeRetailerProducts);
+                // A newly discovered link was persisted by the sync service.
+                retailerProducts = await _retailerProductRepository.GetByItemIdAsync(item.Id);
+                storeRetailerProducts = retailerProducts.Where(product =>
+                    product.RetailerId == store.RetailerId && product.IsActive &&
+                    refresh.UsableProductIds.Contains(product.Id)).ToList();
+            }
+
             StoreComparisonItemResult?
                 bestItemResult = null;
 
@@ -152,7 +169,10 @@ public class StoreComparisonService : IStoreComparisonService
                             LineTotal =
                                 lineTotal,
 
-                            IsAvailable = true
+                            IsAvailable = true,
+                            PriceStatus = refresh.Status,
+                            PriceMessage = refresh.Message,
+                            PriceLastCheckedAt = effectivePrice.LastCheckedAt
                         };
                 }
             }
@@ -167,7 +187,10 @@ public class StoreComparisonService : IStoreComparisonService
                         ItemId = item.Id,
                         ItemName = item.Name,
                         Quantity = groceryListItem.Quantity,
-                        IsAvailable = false
+                        IsAvailable = false,
+                        PriceStatus = refresh.Status is "cached" or "refreshed"
+                            ? "price_unavailable" : refresh.Status,
+                        PriceMessage = refresh.Message ?? "No price is available for this item."
                     }
                 );
 
@@ -199,9 +222,10 @@ public class StoreComparisonService : IStoreComparisonService
         foreach (var storeLocationId in distinctStoreIds)
         {
             var comparison =
-                await CompareStoreAsync(
+                await CompareStoreCoreAsync(
                     userId,
-                    storeLocationId
+                    storeLocationId,
+                    true
                 );
 
             if (comparison is null)

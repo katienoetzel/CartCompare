@@ -74,9 +74,9 @@ function useBaseHandlers() {
       }
     ),
 
-    http.get(
-      `${API_BASE_URL}/api/store-locations/retailer/1`,
-      ({ request }) => {
+    http.post(
+      `${API_BASE_URL}/api/store-locations/search`,
+      async ({ request }) => {
         expect(
           request.headers.get(
             'Authorization'
@@ -85,7 +85,8 @@ function useBaseHandlers() {
           'Bearer existing-token'
         )
 
-        return HttpResponse.json([
+        expect(await request.json()).toEqual({ postalCode: '27613' })
+        return HttpResponse.json({ postalCode: '27613', failedRetailers: [], stores: [
           {
             id: 101,
             retailerId: 1,
@@ -106,7 +107,7 @@ function useBaseHandlers() {
             state: 'NC',
             postalCode: '27609',
           },
-        ])
+        ] })
       }
     )
   )
@@ -125,7 +126,7 @@ describe(
     })
 
     it(
-      'loads stores when a retailer is selected',
+      'loads nearby stores after a ZIP code search',
       async () => {
         // Arrange
         const user =
@@ -133,13 +134,6 @@ describe(
 
         render(<App />)
 
-        const retailerSelect =
-          await screen.findByRole(
-            'combobox',
-            {
-              name: 'Retailer',
-            }
-          )
 
         expect(
           screen.getByText(
@@ -158,10 +152,8 @@ describe(
         ).toBeDisabled()
 
         // Act
-        await user.selectOptions(
-          retailerSelect,
-          '1'
-        )
+        await user.type(screen.getByRole('textbox', { name: 'ZIP code' }), '27613')
+        await user.click(screen.getByRole('button', { name: 'Find Stores' }))
 
         // Assert
         expect(
@@ -185,6 +177,22 @@ describe(
         ).toBeInTheDocument()
       }
     )
+
+    it('keeps returned stores when another retailer fails', async () => {
+      server.use(http.post(`${API_BASE_URL}/api/store-locations/search`, () =>
+        HttpResponse.json({
+          postalCode: '27613',
+          stores: [{ id: 101, retailerId: 1, retailerName: 'Kroger', name: 'Kroger Downtown' }],
+          failedRetailers: [{ id: 2, name: 'Lowes Foods' }],
+        })
+      ))
+      const user = userEvent.setup()
+      render(<App />)
+      await user.type(screen.getByRole('textbox', { name: 'ZIP code' }), '27613')
+      await user.click(screen.getByRole('button', { name: 'Find Stores' }))
+      expect(await screen.findByRole('checkbox', { name: /Kroger Downtown/ })).toBeInTheDocument()
+      expect(screen.getByText('Could not update stores for: Lowes Foods.')).toBeInTheDocument()
+    })
 
     it(
       'compares selected stores and renders complete and incomplete results',
@@ -282,18 +290,9 @@ describe(
 
         render(<App />)
 
-        const retailerSelect =
-          await screen.findByRole(
-            'combobox',
-            {
-              name: 'Retailer',
-            }
-          )
 
-        await user.selectOptions(
-          retailerSelect,
-          '1'
-        )
+        await user.type(screen.getByRole('textbox', { name: 'ZIP code' }), '27613')
+        await user.click(screen.getByRole('button', { name: 'Find Stores' }))
 
         const downtownCheckbox =
           await screen.findByRole(
@@ -472,15 +471,8 @@ describe(
 
         render(<App />)
 
-        await user.selectOptions(
-          await screen.findByRole(
-            'combobox',
-            {
-              name: 'Retailer',
-            }
-          ),
-          '1'
-        )
+        await user.type(screen.getByRole('textbox', { name: 'ZIP code' }), '27613')
+        await user.click(screen.getByRole('button', { name: 'Find Stores' }))
 
         await user.click(
           await screen.findByRole(

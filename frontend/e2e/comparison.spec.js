@@ -242,10 +242,7 @@ test(
         }
       )
 
-    await readJson(
-  storeTwoResponse,
-  'Create second store'
-)
+    const storeTwo = await readJson(storeTwoResponse, 'Create second store')
 
     // ---------------------------------
     // Arrange: retailer product
@@ -336,6 +333,21 @@ test(
     // Act: log in through the browser
     // ---------------------------------
 
+    // Supply locations for the test retailer, which has no external provider.
+    await page.route('**/api/store-locations/search', async (route) => {
+      if (route.request().method() === 'OPTIONS') {
+        await route.continue()
+        return
+      }
+      await route.fulfill({
+        headers: { 'access-control-allow-origin': '*' },
+        json: {
+          postalCode: '27613',
+          failedRetailers: [],
+          stores: [storeOne, storeTwo].map((store) => ({ ...store, retailerName })),
+        },
+      })
+    })
     await page.goto('/')
 
     await page
@@ -454,6 +466,9 @@ test(
     // ---------------------------------
     // Act: select both stores
     // ---------------------------------
+
+    await page.getByRole('textbox', { name: 'ZIP code' }).fill('27613')
+    await page.getByRole('button', { name: 'Find Stores' }).click()
 
     const storeOneCheckbox =
       page.getByRole(

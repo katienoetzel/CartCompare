@@ -290,6 +290,16 @@
   align-items: flex-end;
 }
 
+.store-search-controls,
+.store-search-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+.store-search-controls { flex-wrap: wrap; }
+.store-search-form .retailer-field { width: 140px; }
+.store-search-form .button { white-space: nowrap; }
+
 .retailer-field {
   width: min(260px, 100%);
   display: flex;
@@ -910,4 +920,12 @@
   .auth-card {
     padding: 24px;
   }
+}
+@media (max-width: 640px) {
+  .store-search-controls,
+  .store-search-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .store-search-form .retailer-field { width: 100%; }
 }

@@ -19,4 +19,8 @@ public class StoreComparisonItemResult
     public decimal? LineTotal { get; set; }
 
     public bool IsAvailable { get; set; }
+
+    public string? PriceStatus { get; set; }
+    public string? PriceMessage { get; set; }
+    public DateTime? PriceLastCheckedAt { get; set; }
 }

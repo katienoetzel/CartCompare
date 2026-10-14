@@ -62,10 +62,18 @@ public class ProductPriceSyncService
             productMatchingService;
     }
 
-    public async Task<ProductPriceSyncResult> SyncAsync(
+    public Task<ProductPriceSyncResult> SyncAsync(
+        int itemId, int storeLocationId, string externalProductId) =>
+        SyncCoreAsync(itemId, storeLocationId, externalProductId, false);
+
+    public Task<ProductPriceSyncResult> SyncMatchedAsync(
+        int itemId, int storeLocationId, string externalProductId) =>
+        SyncCoreAsync(itemId, storeLocationId, externalProductId, true);
+
+    private async Task<ProductPriceSyncResult> SyncCoreAsync(
         int itemId,
         int storeLocationId,
-        string externalProductId)
+        string externalProductId, bool requireSafeMatch)
     {
         // -------------------------------------------------
         // 1. Find the canonical CartCompare Item
@@ -184,6 +192,27 @@ public class ProductPriceSyncService
                     item,
                     providerProduct
                 );
+
+        if (requireSafeMatch &&
+            (providerProduct.ExternalProductId != externalProductId.Trim() ||
+             !AutomaticProductMatchPolicy.IsSafe(item, new ProductCandidate
+             {
+                 ExternalProductId = providerProduct.ExternalProductId,
+                 Name = providerProduct.Name,
+                 Brand = providerProduct.Brand,
+                 Size = providerProduct.Size,
+                 IsMatch = matchResult.IsMatch,
+                 MatchMethod = matchResult.MatchMethod,
+                 MatchConfidence = matchResult.MatchConfidence,
+                 MatchReason = matchResult.Reason
+             })))
+        {
+            return new ProductPriceSyncResult
+            {
+                Result = ProductPriceSyncResultType.AutomaticMatchRejected,
+                ProviderName = provider.ProviderName
+            };
+        }
 
         // -------------------------------------------------
         // 7. See whether this retailer product already

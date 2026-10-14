@@ -4,6 +4,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using CartCompare.Entities;
 using CartCompare.Entities.Enums;
+using CartCompare.Providers.Models;
+using Microsoft.EntityFrameworkCore;
 using CartCompare.IntegrationTests.Fixtures;
 
 namespace CartCompare.IntegrationTests.Api;
@@ -11,6 +13,126 @@ namespace CartCompare.IntegrationTests.Api;
 public class ComparisonsApiTests
     : PostgresIntegrationTestBase
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CompareStores_AutomaticallyMatchesAndCaches_OrRejectsChangedProduct(bool changedProduct)
+    {
+        using var factory = new CartCompareWebApplicationFactory(ConnectionString, strictAdminAuthorization: true);
+        using var client = factory.CreateClient();
+        var auth = await RegisterAndGetAuthAsync(client, $"auto-match-{changedProduct}@example.com");
+        SetBearerToken(client, auth.Token);
+        var seeded = await SeedSingleComparisonAsync(auth.UserId, 2, null, null, null, false);
+        await using (var context = CreateDbContext())
+        {
+            context.Set<RetailerProduct>().RemoveRange(
+                context.Set<RetailerProduct>().Where(product => product.ItemId == seeded.ItemId));
+            var item = await context.Set<Item>().FindAsync(seeded.ItemId);
+            item!.Brand = null;
+            item.Size = "1 gallon";
+            await context.SaveChangesAsync();
+        }
+        var searched = new ProviderProduct
+        {
+            ExternalProductId = "auto-milk", Name = "Test Brand Whole Milk",
+            Brand = "Test Brand", Size = "1 gallon"
+        };
+        factory.TestPriceProvider.SupportedRetailers.Add("Kroger");
+        factory.TestPriceProvider.ProductsToReturn.Add(searched);
+        factory.TestPriceProvider.ProductsByExternalId[searched.ExternalProductId] = changedProduct
+            ? new ProviderProduct
+            {
+                ExternalProductId = searched.ExternalProductId, Name = "Test Brand Chocolate Whole Milk",
+                Brand = "Test Brand", Size = "1 gallon"
+            }
+            : searched;
+        factory.TestPriceProvider.PricesByExternalProductId[searched.ExternalProductId] =
+            new ProviderPriceSnapshot { RegularPrice = 3m, AvailabilityStatus = AvailabilityStatus.Available };
+
+        var response = await client.PostAsJsonAsync("/api/comparisons/stores",
+            new { storeLocationIds = new[] { seeded.StoreId, seeded.StoreId } });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var storeResult = json.RootElement.GetProperty("stores")[0];
+        Assert.Equal(!changedProduct, storeResult.GetProperty("isComplete").GetBoolean());
+        Assert.Equal(changedProduct ? 0m : 6m, storeResult.GetProperty("knownSubtotal").GetDecimal());
+        Assert.Equal(changedProduct ? "match_uncertain" : "refreshed",
+            storeResult.GetProperty("items")[0].GetProperty("priceStatus").GetString());
+        Assert.Single(factory.TestPriceProvider.SearchProductsCalls);
+
+        await using (var context = CreateDbContext())
+        {
+            var product = await context.Set<RetailerProduct>().SingleOrDefaultAsync(
+                product => product.ItemId == seeded.ItemId);
+            if (changedProduct)
+            {
+                Assert.Null(product);
+                Assert.Empty(factory.TestPriceProvider.GetPriceCalls);
+                return;
+            }
+            Assert.NotNull(product);
+            Assert.Equal(ProductMatchMethod.Deterministic, product.MatchMethod);
+            var price = await context.Set<Price>().SingleAsync(
+                price => price.RetailerProductId == product.Id && price.StoreLocationId == seeded.StoreId);
+            Assert.Equal(3m, price.RegularPrice);
+        }
+        int secondStoreId;
+        await using (var context = CreateDbContext())
+        {
+            var secondStore = CreateStore(seeded.RetailerId, "STORE-2", "Second Store");
+            context.Set<StoreLocation>().Add(secondStore);
+            await context.SaveChangesAsync();
+            secondStoreId = secondStore.Id;
+        }
+        var second = await client.PostAsJsonAsync("/api/comparisons/stores",
+            new { storeLocationIds = new[] { seeded.StoreId, secondStoreId } });
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        using var cached = JsonDocument.Parse(await second.Content.ReadAsStringAsync());
+        Assert.Equal("cached", FindStore(cached.RootElement.GetProperty("stores"), seeded.StoreId)
+            .GetProperty("items")[0].GetProperty("priceStatus").GetString());
+        Assert.Equal("refreshed", FindStore(cached.RootElement.GetProperty("stores"), secondStoreId)
+            .GetProperty("items")[0].GetProperty("priceStatus").GetString());
+        Assert.Single(factory.TestPriceProvider.SearchProductsCalls);
+        Assert.Equal(2, factory.TestPriceProvider.GetPriceCalls.Count);
+        Assert.Contains(factory.TestPriceProvider.GetPriceCalls, call => call.ExternalLocationId == "STORE-2");
+        await using var persisted = CreateDbContext();
+        var persistedProduct = await persisted.Set<RetailerProduct>().SingleAsync(
+            product => product.ItemId == seeded.ItemId);
+        Assert.Equal(2, await persisted.Set<Price>().CountAsync(price =>
+            price.RetailerProductId == persistedProduct.Id));
+    }
+
+    [Fact]
+    public async Task CompareStores_WhenRefreshFails_DoesNotRankUsingOldPrice()
+    {
+        using var factory = new CartCompareWebApplicationFactory(ConnectionString);
+        using var client = factory.CreateClient();
+        var auth = await RegisterAndGetAuthAsync(client, "refresh-failure@example.com");
+        SetBearerToken(client, auth.Token);
+        var seeded = await SeedSingleComparisonAsync(auth.UserId, 1, 0.01m, null, null, true);
+        await using (var context = CreateDbContext())
+        {
+            var product = await context.Set<RetailerProduct>().SingleAsync(
+                product => product.ItemId == seeded.ItemId);
+            var price = await context.Set<Price>().SingleAsync(
+                price => price.RetailerProductId == product.Id && price.StoreLocationId == seeded.StoreId);
+            price.LastCheckedAt = DateTime.UtcNow.AddHours(-7);
+            await context.SaveChangesAsync();
+        }
+        factory.TestPriceProvider.SupportedRetailers.Add("Kroger");
+        factory.TestPriceProvider.GetProductHandler = (_, _, _) =>
+            throw new HttpRequestException("Provider unavailable");
+        var response = await client.PostAsJsonAsync("/api/comparisons/stores",
+            new { storeLocationIds = new[] { seeded.StoreId } });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var result = json.RootElement.GetProperty("stores")[0];
+        Assert.False(result.GetProperty("isComplete").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, result.GetProperty("rank").ValueKind);
+        Assert.Equal(0m, result.GetProperty("knownSubtotal").GetDecimal());
+        Assert.Equal("provider_error", result.GetProperty("items")[0].GetProperty("priceStatus").GetString());
+    }
+
     [Fact]
     public async Task CompareStore_WithoutToken_ReturnsUnauthorized()
     {
