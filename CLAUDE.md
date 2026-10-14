@@ -87,8 +87,10 @@ The full plan and to-do list live in the shared roadmap doc: https://claude.ai/c
 
 Done and verified locally: the "Now" phase, the realistic basket test (both Lowe's Foods stores price all 10 staples; Harris Teeter's gaps are real stock differences), and production readiness. CI passes on `main`.
 
+Deployed 2026-10-14 (see `docs/DEPLOYMENT.md`): frontend https://cart-compare-flame.vercel.app, API https://cartcompare-api-393971004541.us-east1.run.app (Google Cloud project `cartcompare-511622`, free trial until 2027-01-13), database on Neon. Kroger's Akamai firewall blocks Cloud Run's shared outgoing addresses (403 "Access Denied"), so the service sends traffic through Cloud NAT with a reserved address (`cartcompare-egress`, about $4–5 a month). Deploys run from Cloud Shell; the user has no local `gcloud` or Docker.
+
 Next steps, in order:
-1. Deploy following `docs/DEPLOYMENT.md`: API on Google Cloud Run, database on Neon, frontend on Vercel. The account steps (Neon, Google Cloud billing and budget alert, Secret Manager, Vercel, registering the admin) need the user.
+1. Finish the production smoke test: register a non-admin user, ZIP 27613, build a list, compare a Lowe's Foods and a Harris Teeter store.
 2. Portfolio polish: one link, a demo user, a real comparison in under a minute.
 3. After launch: resolve uncertain matches in the UI (closest candidate shown with an "uncertain" badge, "choose another"), then saved-item and membership frontend workflows.
 

@@ -1,7 +1,9 @@
 # Deploying CartCompare
 
 The API runs on Google Cloud Run, the database on Neon, and the frontend on
-Vercel, all on free tiers. Run the `gcloud` commands in
+Vercel, all on free tiers except one part: Kroger's firewall refuses Cloud
+Run's shared outgoing addresses, so the API sends its traffic from a fixed
+address (step 4b, about $4–5 a month). Run the `gcloud` commands in
 [Cloud Shell](https://shell.cloud.google.com), which has `gcloud` and `git`
 installed; no local Docker is needed because Cloud Build builds
 `backend/Dockerfile`.
@@ -88,6 +90,39 @@ Why these settings:
 The deploy prints the service URL (`https://cartcompare-api-....run.app`).
 Check it: `curl <service-url>/api/retailers` returns `[]`.
 
+## 4b. Fixed outgoing address (needed for Kroger and Harris Teeter)
+
+Kroger's API sits behind Akamai, which answers requests from Cloud Run's
+shared outgoing addresses with a 403 "Access Denied" page, even though the
+token request succeeds. Requests from a regular Google VM address (as Cloud
+Shell uses) are accepted. Route the service's outgoing traffic through a
+reserved address with Direct VPC egress and Cloud NAT:
+
+```bash
+gcloud services enable compute.googleapis.com
+gcloud compute addresses create cartcompare-egress --region=us-east1
+gcloud compute routers create cartcompare-router --network=default --region=us-east1
+gcloud compute routers nats create cartcompare-nat --router=cartcompare-router --region=us-east1 \
+  --nat-all-subnet-ip-ranges --nat-external-ip-pool=cartcompare-egress
+gcloud run services update cartcompare-api --region=us-east1 \
+  --network=default --subnet=default --vpc-egress=all-traffic
+```
+
+This needs the project's `default` network with a `us-east1` subnet
+(`gcloud compute networks subnets list --network=default --regions=us-east1`).
+The reserved address and NAT cost about $4–5 a month. To remove them:
+
+```bash
+gcloud run services update cartcompare-api --region=us-east1 --clear-network
+gcloud compute routers nats delete cartcompare-nat --router=cartcompare-router --region=us-east1 --quiet
+gcloud compute routers delete cartcompare-router --region=us-east1 --quiet
+gcloud compute addresses delete cartcompare-egress --region=us-east1 --quiet
+```
+
+If Kroger or Harris Teeter fail again, the logs show Kroger's reply:
+`gcloud logging read 'resource.labels.service_name="cartcompare-api" AND jsonPayload.LogLevel="Warning"' --freshness=1h --limit=1 --format='value(jsonPayload.Exception)'`.
+An "Access Denied" page means the outgoing address is blocked.
+
 Startup fails with a clear message if `Jwt__Key` is under 32 bytes or
 `Frontend__Origin` is missing: see **Cloud Run → cartcompare-api → Logs**.
 Logs are JSON; filter retailer calls with `jsonPayload.Category="CartCompare.Infrastructure.Providers.LoggingPriceProvider"`.
@@ -135,6 +170,8 @@ prices and is fast.
 
 ## Updating
 
-Re-run the `gcloud run deploy` command from step 4 after pulling changes;
-secrets and environment variables carry over. Vercel redeploys the frontend on
+After pulling changes, redeploy with
+`gcloud run deploy cartcompare-api --source backend --region us-east1`;
+secrets, environment variables and the network settings from step 4b carry
+over. Vercel redeploys the frontend on
 every push to the main branch.
