@@ -274,6 +274,8 @@ describe(
                         quantity: 2,
                         isAvailable:
                           false,
+                        priceStatus: 'ambiguous_match',
+                        priceMessage: 'Several products could match; a product selection is needed.',
                         unitPrice: null,
                         lineTotal: null,
                       },
@@ -366,6 +368,10 @@ describe(
             'Incomplete stores: 1'
           )
         ).toBeInTheDocument()
+
+        expect(screen.getByText(
+          'Several products could match; a product selection is needed.'
+        )).toBeInTheDocument()
 
         const completeHeading =
           screen.getByRole(

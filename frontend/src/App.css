@@ -929,3 +929,10 @@
   }
   .store-search-form .retailer-field { width: 100%; }
 }
+
+.result-item-row { flex-wrap: wrap; }
+.result-item-row .price-lookup-message {
+  flex-basis: 100%;
+  order: 3;
+  color: var(--warning-text);
+}

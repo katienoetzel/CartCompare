@@ -983,7 +983,7 @@ function App() {
                   }
                 >
                   {isComparing
-                    ? "Comparing..."
+                    ? "Refreshing prices..."
                     : "Compare Stores"}
                 </button>
               </div>
@@ -1123,6 +1123,11 @@ function App() {
                                     resultItem.itemId
                                   }
                                 >
+                                  {resultItem.priceMessage && (
+                                    <span className="price-lookup-message" role="status">
+                                      {resultItem.priceMessage}
+                                    </span>
+                                  )}
                                   <span className="sr-only">
                                     {resultItem.isAvailable
                                       ? `${resultItem.itemName} — Qty ${resultItem.quantity} — $${Number(
