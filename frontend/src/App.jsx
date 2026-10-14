@@ -37,6 +37,23 @@ import CatalogSearch from "./CatalogSearch";
 
 import "./App.css";
 
+// Matches the API's limit on one comparison request.
+const MAX_COMPARED_STORES = 10;
+
+// Items sized "per lb" are bought by the pound: quantity is pounds
+// and the unit price is per pound.
+function isPerPound(size) {
+  return /^\s*(per|\/)\s*(lb|lbs|pound)\s*$/i.test(size ?? "");
+}
+
+function quantityText(quantity, size) {
+  return isPerPound(size) ? `${quantity} lb` : `Qty ${quantity}`;
+}
+
+function unitPriceText(unitPrice, size) {
+  return `$${Number(unitPrice).toFixed(2)}${isPerPound(size) ? "/lb" : " each"}`;
+}
+
 function App() {
   const [retailers, setRetailers] =
     useState([]);
@@ -346,6 +363,9 @@ function App() {
           (id) => id !== storeId
         )
       );
+    } else if (selectedStoreIds.length >= MAX_COMPARED_STORES) {
+      setError(`You can compare up to ${MAX_COMPARED_STORES} stores at a time.`);
+      return;
     } else {
       setSelectedStoreIds([
         ...selectedStoreIds,
@@ -353,6 +373,7 @@ function App() {
       ]);
     }
 
+    setError("");
     setComparisonResult(null);
   }
 
@@ -396,6 +417,8 @@ function App() {
   const visibleStores = selectedRetailerId
     ? stores.filter((store) => String(store.retailerId) === selectedRetailerId)
     : stores;
+
+  const itemSizes = Object.fromEntries(items.map((item) => [item.id, item.size]));
 
   // Every word must appear somewhere in the item's name, brand, size or category.
   const itemQueryWords = itemQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -857,9 +880,9 @@ function App() {
                                 `${listItem.size} · `}
 
                               Quantity:{" "}
-                              {
-                                listItem.quantity
-                              }
+                              {isPerPound(listItem.size)
+                                ? `${listItem.quantity} lb`
+                                : listItem.quantity}
                             </p>
                           </div>
 
@@ -1184,12 +1207,19 @@ function App() {
                                   )}
                                   <span className="sr-only">
                                     {resultItem.isAvailable
-                                      ? `${resultItem.itemName} — Qty ${resultItem.quantity} — $${Number(
-                                          resultItem.unitPrice
-                                        ).toFixed(2)} each — $${Number(
+                                      ? `${resultItem.itemName} — ${quantityText(
+                                          resultItem.quantity,
+                                          itemSizes[resultItem.itemId]
+                                        )} — ${unitPriceText(
+                                          resultItem.unitPrice,
+                                          itemSizes[resultItem.itemId]
+                                        )} — $${Number(
                                           resultItem.lineTotal
                                         ).toFixed(2)} total`
-                                      : `${resultItem.itemName} — Qty ${resultItem.quantity} — Price unavailable`}
+                                      : `${resultItem.itemName} — ${quantityText(
+                                          resultItem.quantity,
+                                          itemSizes[resultItem.itemId]
+                                        )} — Price unavailable`}
                                   </span>
 
                                   <div aria-hidden="true">
@@ -1200,10 +1230,10 @@ function App() {
                                     </strong>
 
                                     <span>
-                                      Qty{" "}
-                                      {
-                                        resultItem.quantity
-                                      }
+                                      {quantityText(
+                                        resultItem.quantity,
+                                        itemSizes[resultItem.itemId]
+                                      )}
                                     </span>
                                   </div>
 
@@ -1213,13 +1243,10 @@ function App() {
                                       aria-hidden="true"
                                     >
                                       <span>
-                                        $
-                                        {Number(
-                                          resultItem.unitPrice
-                                        ).toFixed(
-                                          2
-                                        )}{" "}
-                                        each
+                                        {unitPriceText(
+                                          resultItem.unitPrice,
+                                          itemSizes[resultItem.itemId]
+                                        )}
                                       </span>
 
                                       <strong>

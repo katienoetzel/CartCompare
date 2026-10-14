@@ -178,6 +178,65 @@ describe(
       }
     )
 
+    it('shows per-lb items by the pound in the list and the results', async () => {
+      server.use(
+        http.get(`${API_BASE_URL}/api/items`, () =>
+          HttpResponse.json([{ id: 3, name: 'Bananas', size: 'per lb', category: 'Produce', isActive: true }])
+        ),
+        http.get(`${API_BASE_URL}/api/grocery-list`, () =>
+          HttpResponse.json([{ id: 200, itemId: 3, name: 'Bananas', size: 'per lb', quantity: 3 }])
+        ),
+        http.post(`${API_BASE_URL}/api/comparisons/stores`, () =>
+          HttpResponse.json({
+            completeStoreCount: 1,
+            incompleteStoreCount: 0,
+            missingStoreLocationIds: [],
+            stores: [{
+              storeLocationId: 101, storeName: 'Kroger Downtown', rank: 1, knownSubtotal: 1.95,
+              isComplete: true, missingItemCount: 0,
+              items: [{ itemId: 3, itemName: 'Bananas', quantity: 3, isAvailable: true, unitPrice: 0.65, lineTotal: 1.95 }],
+            }],
+          })
+        )
+      )
+      const user = userEvent.setup()
+      render(<App />)
+
+      expect(await screen.findByText('per lb · Quantity: 3 lb')).toBeInTheDocument()
+
+      await user.type(screen.getByRole('textbox', { name: 'ZIP code' }), '27613')
+      await user.click(screen.getByRole('button', { name: 'Find Stores' }))
+      await user.click(await screen.findByRole('checkbox', { name: /Kroger Downtown/ }))
+      await user.click(screen.getByRole('button', { name: 'Compare Stores' }))
+
+      expect(await screen.findByText('Bananas — 3 lb — $0.65/lb — $1.95 total')).toBeInTheDocument()
+    })
+
+    it('stops at 10 selected stores, the API limit', async () => {
+      server.use(http.post(`${API_BASE_URL}/api/store-locations/search`, () =>
+        HttpResponse.json({
+          postalCode: '27613',
+          failedRetailers: [],
+          stores: Array.from({ length: 11 }, (_, index) => ({
+            id: 500 + index, retailerId: 1, retailerName: 'Kroger', name: `Store ${index + 1}`,
+          })),
+        })
+      ))
+      const user = userEvent.setup()
+      render(<App />)
+      await user.type(screen.getByRole('textbox', { name: 'ZIP code' }), '27613')
+      await user.click(screen.getByRole('button', { name: 'Find Stores' }))
+      await screen.findByRole('checkbox', { name: /Store 11/ })
+
+      for (let index = 1; index <= 11; index++) {
+        await user.click(screen.getByRole('checkbox', { name: new RegExp(`Store ${index}\\b`) }))
+      }
+
+      expect(screen.getByText('Selected stores: 10')).toBeInTheDocument()
+      expect(screen.getByText(/You can compare up to 10 stores at a time./)).toBeInTheDocument()
+      expect(screen.getByRole('checkbox', { name: /Store 11/ })).not.toBeChecked()
+    })
+
     it('keeps returned stores when another retailer fails', async () => {
       server.use(http.post(`${API_BASE_URL}/api/store-locations/search`, () =>
         HttpResponse.json({

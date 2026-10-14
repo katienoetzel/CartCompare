@@ -55,7 +55,7 @@ public class GroceryListService : IGroceryListService
         return results;
     }
 
-    public async Task<GroceryListItemDetails?>
+    public async Task<GroceryListSetResult>
         SetQuantityAsync(
             int userId,
             int itemId,
@@ -66,7 +66,10 @@ public class GroceryListService : IGroceryListService
 
         if (item is null)
         {
-            return null;
+            return new GroceryListSetResult
+            {
+                Status = GroceryListSetStatus.ItemNotFound
+            };
         }
 
         var existingItem =
@@ -85,10 +88,25 @@ public class GroceryListService : IGroceryListService
                 existingItem
             );
 
-            return CreateDetails(
-                existingItem,
-                item
+            return Saved(
+                CreateDetails(
+                    existingItem,
+                    item
+                )
             );
+        }
+
+        var listItems =
+            await _groceryListRepository.GetByUserIdAsync(
+                userId
+            );
+
+        if (listItems.Count >= IGroceryListService.MaxItems)
+        {
+            return new GroceryListSetResult
+            {
+                Status = GroceryListSetStatus.ListFull
+            };
         }
 
         var groceryListItem = new GroceryListItem
@@ -104,10 +122,22 @@ public class GroceryListService : IGroceryListService
             groceryListItem
         );
 
-        return CreateDetails(
-            groceryListItem,
-            item
+        return Saved(
+            CreateDetails(
+                groceryListItem,
+                item
+            )
         );
+    }
+
+    private static GroceryListSetResult Saved(
+        GroceryListItemDetails details)
+    {
+        return new GroceryListSetResult
+        {
+            Status = GroceryListSetStatus.Saved,
+            Item = details
+        };
     }
 
     public async Task<bool> RemoveItemAsync(

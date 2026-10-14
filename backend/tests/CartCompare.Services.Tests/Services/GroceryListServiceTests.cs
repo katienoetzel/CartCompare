@@ -1,5 +1,7 @@
 using CartCompare.Entities;
 using CartCompare.Repositories.Interfaces;
+using CartCompare.Services.Interfaces;
+using CartCompare.Services.Models;
 using CartCompare.Services.Services;
 using Moq;
 
@@ -20,6 +22,17 @@ public class GroceryListServiceTests
     {
         _groceryListRepositoryMock =
             new Mock<IGroceryListRepository>();
+
+        // An empty list unless a test says otherwise.
+        _groceryListRepositoryMock
+            .Setup(repository =>
+                repository.GetByUserIdAsync(
+                    It.IsAny<int>()
+                )
+            )
+            .ReturnsAsync(
+                new List<GroceryListItem>()
+            );
 
         _itemRepositoryMock =
             new Mock<IItemRepository>();
@@ -193,7 +206,7 @@ public class GroceryListServiceTests
     }
 
     [Fact]
-    public async Task SetQuantityAsync_WhenItemDoesNotExist_ReturnsNull()
+    public async Task SetQuantityAsync_WhenItemDoesNotExist_ReturnsItemNotFound()
     {
         // Arrange
         _itemRepositoryMock
@@ -215,7 +228,10 @@ public class GroceryListServiceTests
             );
 
         // Assert
-        Assert.Null(result);
+        Assert.Equal(
+            GroceryListSetStatus.ItemNotFound,
+            result.Status
+        );
 
         _groceryListRepositoryMock.Verify(
             repository =>
@@ -334,22 +350,22 @@ public class GroceryListServiceTests
 
         Assert.Equal(
             100,
-            result.GroceryListItemId
+            result.Item!.GroceryListItemId
         );
 
         Assert.Equal(
             item.Id,
-            result.ItemId
+            result.Item!.ItemId
         );
 
         Assert.Equal(
             item.Name,
-            result.ItemName
+            result.Item!.ItemName
         );
 
         Assert.Equal(
             3,
-            result.Quantity
+            result.Item!.Quantity
         );
 
         _groceryListRepositoryMock.Verify(
@@ -452,7 +468,7 @@ public class GroceryListServiceTests
 
         Assert.Equal(
             5,
-            result.Quantity
+            result.Item!.Quantity
         );
 
         _groceryListRepositoryMock.Verify(
@@ -594,5 +610,32 @@ public class GroceryListServiceTests
             UpdatedAt =
                 DateTime.UtcNow.AddMinutes(-5)
         };
+    }
+
+    [Fact]
+    public async Task SetQuantityAsync_WhenListIsFull_DoesNotAddANewItem()
+    {
+        // Arrange
+        var item = CreateItem(id: 1, name: "Whole Milk", size: "1 gallon");
+        _itemRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(item.Id))
+            .ReturnsAsync(item);
+        _groceryListRepositoryMock
+            .Setup(repository => repository.GetByUserAndItemAsync(20, item.Id))
+            .ReturnsAsync((GroceryListItem?)null);
+        _groceryListRepositoryMock
+            .Setup(repository => repository.GetByUserIdAsync(20))
+            .ReturnsAsync(Enumerable.Range(1, IGroceryListService.MaxItems)
+                .Select(index => new GroceryListItem { Id = index, UserId = 20, ItemId = 100 + index, Quantity = 1 })
+                .ToList());
+
+        // Act
+        var result = await _service.SetQuantityAsync(20, item.Id, 1);
+
+        // Assert
+        Assert.Equal(GroceryListSetStatus.ListFull, result.Status);
+        _groceryListRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<GroceryListItem>()),
+            Times.Never);
     }
 }

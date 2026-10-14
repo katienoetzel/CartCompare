@@ -49,9 +49,15 @@ public class CartCompareWebApplicationFactory
     { get; } =
             new();
 
+    private readonly IReadOnlyDictionary<string, string?>
+        _settings;
+
+    // settings override the test configuration below, e.g. a low
+    // "RateLimits:AuthPerMinute" for a rate limit test.
     public CartCompareWebApplicationFactory(
         string connectionString,
-        bool strictAdminAuthorization = false)
+        bool strictAdminAuthorization = false,
+        IReadOnlyDictionary<string, string?>? settings = null)
     {
         ValidateTestDatabase(
             connectionString
@@ -62,6 +68,9 @@ public class CartCompareWebApplicationFactory
 
         _strictAdminAuthorization =
             strictAdminAuthorization;
+
+        _settings =
+            settings ?? new Dictionary<string, string?>();
     }
 
     protected override void ConfigureWebHost(
@@ -111,8 +120,19 @@ public class CartCompareWebApplicationFactory
                         [
                             "Kroger:BaseUrl"
                         ] =
-                            "https://kroger.integration.test/"
+                            "https://kroger.integration.test/",
+
+                        // Tests log in and compare far more often
+                        // than a person would.
+                        ["RateLimits:ComparisonsPerMinute"] = "10000",
+                        ["RateLimits:RetailerSearchesPerMinute"] = "10000",
+                        ["RateLimits:AuthPerMinute"] = "10000"
                     };
+
+                foreach (var setting in _settings)
+                {
+                    testSettings[setting.Key] = setting.Value;
+                }
 
                 configurationBuilder
                     .AddInMemoryCollection(

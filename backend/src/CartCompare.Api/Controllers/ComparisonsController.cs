@@ -3,11 +3,13 @@ using CartCompare.Api.Models.Requests;
 using CartCompare.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CartCompare.Api.Controllers;
 
 [ApiController]
 [Route("api/comparisons")]
+[EnableRateLimiting(RateLimitPolicies.Comparisons)]
 [Authorize]
 public class ComparisonsController : ControllerBase
 {

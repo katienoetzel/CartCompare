@@ -8,7 +8,11 @@ public interface IGroceryListService
         int userId
     );
 
-    Task<GroceryListItemDetails?> SetQuantityAsync(
+    // A list holds at most this many different items, which bounds
+    // the retailer lookups one comparison can cause.
+    const int MaxItems = 50;
+
+    Task<GroceryListSetResult> SetQuantityAsync(
         int userId,
         int itemId,
         int quantity

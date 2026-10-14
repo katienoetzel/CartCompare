@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text;
 
+using CartCompare.Api;
 using CartCompare.Api.Authentication;
 using CartCompare.Entities;
 using CartCompare.Infrastructure.Data;
@@ -25,7 +26,21 @@ var builder = WebApplication.CreateBuilder(args);
 // Controllers
 // ==================================================
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // Outside Development the *DevelopmentController classes are not
+    // routed at all, so no action can forget its own environment check.
+    if (!builder.Environment.IsDevelopment())
+    {
+        options.Conventions.Add(
+            new RemoveDevelopmentControllersConvention()
+        );
+    }
+});
+
+builder.Services.AddCartCompareRateLimits(
+    builder.Configuration
+);
 
 
 // ==================================================
@@ -524,6 +539,9 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// After authentication, so limits apply per signed-in user.
+app.UseRateLimiter();
 
 app.MapControllers();
 

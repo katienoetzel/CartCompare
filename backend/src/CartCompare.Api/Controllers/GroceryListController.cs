@@ -56,22 +56,25 @@ public class GroceryListController : ControllerBase
             return Unauthorized();
         }
 
-        var groceryListItem =
+        var result =
             await _groceryListService.SetQuantityAsync(
                 userId.Value,
                 itemId,
                 request.Quantity
             );
 
-        if (groceryListItem is null)
+        return result.Status switch
         {
-            return NotFound(new
+            GroceryListSetStatus.ItemNotFound => NotFound(new
             {
                 message = "Item not found."
-            });
-        }
-
-        return Ok(ToResponse(groceryListItem));
+            }),
+            GroceryListSetStatus.ListFull => BadRequest(new
+            {
+                message = $"A grocery list can hold up to {IGroceryListService.MaxItems} items."
+            }),
+            _ => Ok(ToResponse(result.Item!))
+        };
     }
 
     [HttpDelete("{itemId:int}")]

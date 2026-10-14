@@ -4,6 +4,7 @@ using CartCompare.Services.Models;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CartCompare.Api.Controllers;
 
@@ -11,6 +12,7 @@ namespace CartCompare.Api.Controllers;
 // from a nearby store's catalog.
 [ApiController]
 [Route("api/catalog")]
+[EnableRateLimiting(RateLimitPolicies.RetailerSearch)]
 [Authorize]
 public class CatalogController : ControllerBase
 {

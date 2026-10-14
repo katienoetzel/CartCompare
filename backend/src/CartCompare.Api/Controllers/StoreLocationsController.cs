@@ -5,6 +5,7 @@ using CartCompare.Services.Models;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CartCompare.Api.Controllers;
 
@@ -34,6 +35,7 @@ public class StoreLocationsController : ControllerBase
     // The returned IDs can be passed directly to the comparison endpoints.
     [Authorize]
     [HttpPost("search")]
+    [EnableRateLimiting(RateLimitPolicies.RetailerSearch)]
     public async Task<IActionResult> SearchNearby(
         SearchNearbyStoresRequest request)
     {
