@@ -60,6 +60,18 @@ public class ProductMatchingService
             }
         }
 
+        return EvaluateDescription(
+            item,
+            providerProduct
+        );
+    }
+
+    // Name, brand and size rules only; no database lookups. Used for
+    // every catalog item at once when a shopper picks a store product.
+    public ProductMatchResult EvaluateDescription(
+        Item item,
+        ProviderProduct providerProduct)
+    {
         var itemName =
             CanonicalizeName(
                 NormalizeText(item.Name)
@@ -89,9 +101,18 @@ public class ProductMatchingService
             var providerBrand =
                 NormalizeText(providerProduct.Brand);
 
-            if (
-                string.IsNullOrWhiteSpace(providerBrand) ||
-                itemBrand != providerBrand)
+            // Lowe's Foods reports no brand; its product names lead with
+            // it instead ("Doritos Nacho Cheese ..."), so read it from there.
+            var brandMatches =
+                string.IsNullOrWhiteSpace(providerBrand)
+                    ? (NormalizeText(providerProduct.Name) + " ")
+                        .StartsWith(
+                            itemBrand + " ",
+                            StringComparison.Ordinal
+                        )
+                    : itemBrand == providerBrand;
+
+            if (!brandMatches)
             {
                 return NoMatch(
                     "The product brands do not match."
@@ -255,7 +276,6 @@ public class ProductMatchingService
             "chocolate",
             "strawberry",
             "vanilla",
-            "flavored",
             "lactose",
             "reduced",
             "fat",

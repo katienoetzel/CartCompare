@@ -1,6 +1,7 @@
 import {
   render,
   screen,
+  within,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
@@ -26,6 +27,43 @@ const stores = [
   { id: 122, retailerId: 3, retailerName: 'Harris Teeter', name: 'Corners' },
 ]
 
+const doritos = {
+  externalProductId: 'doritos',
+  name: 'Doritos® Nacho Cheese Flavored Tortilla Chips',
+  brand: 'Doritos',
+  size: '9.25 oz',
+  shelfPrice: 5.49,
+}
+
+function useSearchHandler(searchedStores = []) {
+  server.use(
+    http.get(`${API_BASE_URL}/api/catalog/products`, ({ request }) => {
+      const storeLocationId = Number(new URL(request.url).searchParams.get('storeLocationId'))
+      searchedStores.push(storeLocationId)
+
+      return HttpResponse.json({
+        storeLocationId,
+        retailerName: storeLocationId === 122 ? 'Harris Teeter' : 'Lowes Foods',
+        products: storeLocationId === 122 ? [doritos] : [],
+      })
+    })
+  )
+}
+
+function useOptionsHandler(options) {
+  server.use(
+    http.get(`${API_BASE_URL}/api/catalog/products/doritos/options`, () =>
+      HttpResponse.json({ product: doritos, ...options })
+    )
+  )
+}
+
+async function pickDoritos(user, onItemCreated = vi.fn()) {
+  render(<CatalogSearch query=" doritos " stores={stores} onItemCreated={onItemCreated} />)
+  await user.click(screen.getByRole('button', { name: 'Search stores for "doritos"' }))
+  await user.click(await screen.findByRole('button', { name: 'Use this' }))
+}
+
 describe('CatalogSearch', () => {
   it(
     'asks for nearby stores before it can search their products',
@@ -39,109 +77,92 @@ describe('CatalogSearch', () => {
   )
 
   it(
-    'searches one store per retailer and creates an item from the picked product',
+    'searches the nearest store of each retailer',
     async () => {
-      // Arrange
       const searchedStores = []
-      let createBody = null
-
-      server.use(
-        http.get(`${API_BASE_URL}/api/catalog/products`, ({ request }) => {
-          const url = new URL(request.url)
-          const storeLocationId = Number(url.searchParams.get('storeLocationId'))
-          searchedStores.push(storeLocationId)
-
-          return HttpResponse.json({
-            storeLocationId,
-            retailerName: storeLocationId === 5 ? 'Lowes Foods' : 'Harris Teeter',
-            products: storeLocationId === 5
-              ? [{
-                  externalProductId: 'pb',
-                  name: 'Lowes Foods Creamy Peanut Butter 16 oz',
-                  brand: null,
-                  size: '16 oz',
-                  shelfPrice: 2.99,
-                  suggestedName: 'Creamy Peanut Butter',
-                }]
-              : [],
-          })
-        }),
-        http.post(`${API_BASE_URL}/api/catalog/items`, async ({ request }) => {
-          createBody = await request.json()
-
-          return HttpResponse.json({
-            item: { id: 11, name: 'Creamy Peanut Butter', size: '16 oz', category: 'Pantry' },
-            created: true,
-          })
-        })
-      )
-
-      const onItemCreated = vi.fn()
+      useSearchHandler(searchedStores)
       const user = userEvent.setup()
 
-      render(<CatalogSearch query=" peanut butter " stores={stores} onItemCreated={onItemCreated} />)
+      render(<CatalogSearch query="doritos" stores={stores} onItemCreated={vi.fn()} />)
+      await user.click(screen.getByRole('button', { name: 'Search stores for "doritos"' }))
+      await screen.findByRole('button', { name: 'Use this' })
 
-      // Act
-      await user.click(screen.getByRole('button', { name: 'Search stores for "peanut butter"' }))
-      await user.click(await screen.findByRole('button', { name: 'Use this' }))
-      await user.type(screen.getByLabelText('Category (optional)'), 'Pantry')
-      await user.click(screen.getByRole('button', { name: 'Add item to my list' }))
-
-      // Assert
       expect(searchedStores.sort((a, b) => a - b)).toEqual([5, 122])
-      expect(createBody).toEqual({
-        storeLocationId: 5,
-        externalProductId: 'pb',
-        name: 'Creamy Peanut Butter',
-        size: '16 oz',
-        category: 'Pantry',
-      })
-      expect(onItemCreated).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 11 }),
-        true
-      )
     }
   )
 
   it(
-    'shows why the server refused an edited name',
+    'creates the chosen kind of item without any typed name',
     async () => {
       // Arrange
+      let createBody = null
+      useSearchHandler()
+      useOptionsHandler({
+        existingItems: [],
+        newItems: [
+          { kind: 'Branded', name: 'Nacho Cheese Flavored Tortilla Chips', brand: 'Doritos', size: '9.25 oz' },
+          { kind: 'Generic', name: 'Nacho Cheese Flavored Tortilla Chips', brand: null, size: '9.25 oz' },
+        ],
+      })
       server.use(
-        http.get(`${API_BASE_URL}/api/catalog/products`, () =>
-          HttpResponse.json({
-            retailerName: 'Lowes Foods',
-            products: [{
-              externalProductId: 'pb',
-              name: 'Creamy Peanut Butter',
-              size: '16 oz',
-              shelfPrice: null,
-              suggestedName: 'Creamy Peanut Butter',
-            }],
+        http.post(`${API_BASE_URL}/api/catalog/items`, async ({ request }) => {
+          createBody = await request.json()
+          return HttpResponse.json({
+            item: { id: 11, name: 'Nacho Cheese Flavored Tortilla Chips', brand: 'Doritos', size: '9.25 oz' },
+            created: true,
           })
-        ),
-        http.post(`${API_BASE_URL}/api/catalog/items`, () =>
-          HttpResponse.json(
-            { message: 'The name and size must still describe the product you picked.' },
-            { status: 400 }
-          )
-        )
+        })
       )
-
+      const onItemCreated = vi.fn()
       const user = userEvent.setup()
-      render(<CatalogSearch query="peanut butter" stores={[stores[0]]} onItemCreated={vi.fn()} />)
 
       // Act
-      await user.click(screen.getByRole('button', { name: /Search stores/ }))
-      await user.click(await screen.findByRole('button', { name: 'Use this' }))
-      await user.clear(screen.getByLabelText('Item name'))
-      await user.type(screen.getByLabelText('Item name'), 'Crunchy Peanut Butter')
-      await user.click(screen.getByRole('button', { name: 'Add item to my list' }))
+      await pickDoritos(user, onItemCreated)
+      await user.click(await screen.findByRole('button', { name: 'Add as Doritos' }))
 
       // Assert
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+      expect(createBody).toEqual({ storeLocationId: 122, externalProductId: 'doritos', kind: 'Branded' })
+      expect(onItemCreated).toHaveBeenCalledWith(expect.objectContaining({ id: 11 }), true)
+    }
+  )
+
+  it(
+    'offers the existing item a product already counts as',
+    async () => {
+      // Arrange
+      useSearchHandler()
+      useOptionsHandler({
+        existingItems: [{ id: 7, name: 'Nacho Cheese Tortilla Chips', brand: null, size: '9.25 oz' }],
+        newItems: [],
+      })
+      const onItemCreated = vi.fn()
+      const user = userEvent.setup()
+
+      // Act
+      await pickDoritos(user, onItemCreated)
+      const existing = await screen.findByRole('region', { name: 'Already in the catalog' })
+      expect(within(existing).getByText('Any brand · 9.25 oz')).toBeInTheDocument()
+      await user.click(within(existing).getByRole('button', { name: 'Add to my list' }))
+
+      // Assert
+      expect(screen.queryByRole('region', { name: 'Add a new item' })).not.toBeInTheDocument()
+      expect(onItemCreated).toHaveBeenCalledWith(expect.objectContaining({ id: 7 }), false)
+    }
+  )
+
+  it(
+    'says when a product cannot be added automatically',
+    async () => {
+      useSearchHandler()
+      useOptionsHandler({ existingItems: [], newItems: [] })
+      const user = userEvent.setup()
+
+      await pickDoritos(user)
+
       expect(
-        await screen.findByRole('alert')
-      ).toHaveTextContent('must still describe the product you picked')
+        await screen.findByText(/can't be added automatically/)
+      ).toBeInTheDocument()
     }
   )
 })

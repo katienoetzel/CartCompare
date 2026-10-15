@@ -975,19 +975,23 @@
   font-size: 13px;
 }
 
-.catalog-form {
+.catalog-options {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.catalog-form .retailer-field {
-  width: 100%;
+.catalog-options section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.catalog-form-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
+.catalog-options > p,
+.catalog-options h3 {
+  margin: 0;
+}
+
+.catalog-options section > h3 {
+  font-size: 15px;
 }

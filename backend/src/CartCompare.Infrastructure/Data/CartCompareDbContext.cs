@@ -129,6 +129,12 @@ public class CartCompareDbContext
             entity.Property(i => i.UpdatedAt)
                 .HasColumnType("timestamp with time zone")
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // Deleting a user keeps the items they added.
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(i => i.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
         modelBuilder.Entity<RetailerProduct>(entity =>
         {

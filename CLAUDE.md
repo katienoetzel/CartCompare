@@ -36,7 +36,8 @@ Stack: ASP.NET Core (.NET 10), EF Core, PostgreSQL, ASP.NET Core Identity + JWT,
 - An item sized `per lb` (Bananas, Chicken Breast) is bought by the pound: the list quantity is pounds and prices are per pound.
 - Also: users, retailers, grocery lists (max 50 items), saved items, user retailer memberships.
 - Catalog management and manual sync endpoints require the administrator policy (`Admin:Email`). Admins edit items with `PUT /api/items/{id}`.
-- Shoppers add missing items through `api/catalog`: they pick a real product from a nearby store, and the item's (editable) name and size must still match that product. An existing item with the same name and size is reused.
+- Shoppers add missing items through `api/catalog`: they pick a real product from a nearby store, then choose an option the server builds from it. They never type a name. Options: catalog items the product already counts as (avoids duplicates), "Only <brand>" (branded) and "Any brand" (generic). Store brands (`StoreBrands`: retailer names and private labels) only become generic items, since they can't be compared across stores. Each option must match its own product; an equivalent item (name, brand, size) is reused. `Item.CreatedByUserId` records who added it (not exposed in API responses).
+- Brand names matter for branded goods (Doritos, Eggo): a branded item only matches that brand. A generic item matches every brand's version, but currently only at the same package size; unit pricing ($/oz) for generic items is planned next.
 
 ## Retailers
 
@@ -58,11 +59,11 @@ Stack: ASP.NET Core (.NET 10), EF Core, PostgreSQL, ASP.NET Core Identity + JWT,
 - Outcomes are distinguished: uncertain match, unavailable product, missing price, provider failure.
 - `ProductMatchingService` (deterministic only):
   - A UPC matching an existing retailer product for the item is the strongest match.
-  - An item **with** a brand only matches that brand. An item with **no** brand is generic and matches any brand.
+  - An item **with** a brand only matches that brand. An item with **no** brand is generic and matches any brand. When a product has no brand field (Lowe's Foods), its name must start with the item's brand.
   - If the item has a size, it must match in any unit (`ProductSize`): 1 lb = 16 oz, 1 gallon = 128 fl oz, 1 dozen = 12 ct; "4 ct / 16 oz" matches on either size. A `per lb` item matches weighed products and any fixed-weight package.
   - Names match exactly, or all of the item's (at least 2) meaningful words appear in the product name. Plurals and punctuation such as "&" are ignored; extra words (brand, "Grade A", "Medium Roast") are allowed.
   - A one-word `per lb` item ("Bananas") matches only products whose name ends with that word, before any "(", "–" or "," ("Fresh Bunch of Bananas", not "Banana Squash").
-  - Variant guard: a match is rejected if the product adds a variant word the item doesn't have (chocolate, lactose, organic, reduced, ultra, decaf, whipped, frozen, dried, breaded, whole grain, extra (large), jumbo, …) or a different fat percentage.
+  - Variant guard: a match is rejected if the product adds a variant word the item doesn't have (chocolate, lactose, organic, reduced, ultra, decaf, whipped, frozen, dried, breaded, whole grain, extra (large), jumbo, …) or a different fat percentage. "Flavored" is not a variant word ("Nacho Cheese Flavored Tortilla Chips").
   - "Vitamin D Milk" is treated as whole milk (that's how Harris Teeter names it).
 - `AutomaticProductMatchPolicy`: a product is linked without a person checking it only for a UPC match, or a deterministic match of 0.90+ confidence where both sides have a size.
 

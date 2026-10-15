@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using CartCompare.Api.Models.Requests;
 using CartCompare.Services.Interfaces;
 using CartCompare.Services.Models;
@@ -8,8 +9,9 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace CartCompare.Api.Controllers;
 
-// Shoppers add missing grocery items by picking a real product
-// from a nearby store's catalog.
+// Shoppers add missing grocery items by picking a real product from a
+// nearby store's catalog. The server builds the item from that product;
+// shoppers only choose between its options and never type a name.
 [ApiController]
 [Route("api/catalog")]
 [EnableRateLimiting(RateLimitPolicies.RetailerSearch)]
@@ -45,60 +47,96 @@ public class CatalogController : ControllerBase
                 trimmed
             );
 
-        return result.Result switch
-        {
-            CatalogResultType.Succeeded => Ok(new
+        return result.Result == CatalogResultType.Succeeded
+            ? Ok(new
             {
                 storeLocationId,
                 retailerName = result.RetailerName,
                 products = result.Products
-            }),
-            CatalogResultType.StoreNotFound => NotFound(new
-            {
-                message = "Store not found."
-            }),
-            _ => BadRequest(new
-            {
-                message = $"Product search is not available for {result.RetailerName ?? "this retailer"}."
             })
-        };
+            : Failure(result.Result, result.RetailerName);
+    }
+
+    // What a picked product could become: catalog items it already
+    // counts as, and the new items that could be created from it.
+    [HttpGet("products/{externalProductId}/options")]
+    public async Task<IActionResult> GetOptions(
+        string externalProductId,
+        [FromQuery] int storeLocationId)
+    {
+        if (storeLocationId <= 0 || externalProductId.Length > 100)
+        {
+            return BadRequest(new
+            {
+                message = "Choose a product from a store search."
+            });
+        }
+
+        var result =
+            await _catalogService.GetOptionsAsync(
+                storeLocationId,
+                externalProductId
+            );
+
+        return result.Result == CatalogResultType.Succeeded
+            ? Ok(new
+            {
+                product = result.Product,
+                existingItems = result.ExistingItems,
+                newItems = result.NewItems
+            })
+            : Failure(result.Result, retailerName: null);
     }
 
     [HttpPost("items")]
     public async Task<IActionResult> CreateItem(
         CreateCatalogItemRequest request)
     {
+        if (!int.TryParse(
+                User.FindFirstValue(ClaimTypes.NameIdentifier),
+                out var userId))
+        {
+            return Unauthorized();
+        }
+
         var result =
-            await _catalogService.CreateItemFromProductAsync(
+            await _catalogService.CreateItemAsync(
                 request.StoreLocationId,
                 request.ExternalProductId,
-                request.Name,
-                request.Size,
-                request.Category
+                request.Kind,
+                userId
             );
 
-        return result.Result switch
-        {
-            CatalogResultType.Succeeded => Ok(new
+        return result.Result == CatalogResultType.Succeeded
+            ? Ok(new
             {
                 item = result.Item,
                 created = result.Created
-            }),
+            })
+            : Failure(result.Result, retailerName: null);
+    }
+
+    private IActionResult Failure(
+        CatalogResultType result,
+        string? retailerName)
+    {
+        return result switch
+        {
             CatalogResultType.StoreNotFound => NotFound(new
             {
                 message = "Store not found."
             }),
             CatalogResultType.ProductNotFound => NotFound(new
             {
-                message = "The store no longer lists that product."
+                message = "The store no longer lists that product, or it has no size."
             }),
-            CatalogResultType.NameDoesNotMatchProduct => BadRequest(new
+            CatalogResultType.OptionNotAvailable => BadRequest(new
             {
-                message = "The name and size must still describe the product you picked. Keep its key words and size; you can drop the brand."
+                message = "That kind of item can't be made from this product."
             }),
             _ => BadRequest(new
             {
-                message = "Product search is not available for this retailer."
+                message = $"Product search is not available for {retailerName ?? "this retailer"}."
             })
         };
     }

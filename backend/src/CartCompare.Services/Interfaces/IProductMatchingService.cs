@@ -10,4 +10,10 @@ public interface IProductMatchingService
         Item item,
         ProviderProduct providerProduct
     );
+
+    // The name, brand and size rules without the UPC lookup.
+    ProductMatchResult EvaluateDescription(
+        Item item,
+        ProviderProduct providerProduct
+    );
 }

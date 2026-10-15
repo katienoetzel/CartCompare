@@ -15,11 +15,18 @@ public class CatalogServiceTests
     private readonly Mock<IRetailerRepository> _retailers = new();
     private readonly Mock<IPriceProviderResolver> _providers = new();
     private readonly Mock<IPriceProvider> _provider = new();
+    private readonly List<Item> _catalog = new();
     private readonly CatalogService _service;
 
-    private readonly ProviderProduct _peanutButter = new()
+    private static readonly ProviderProduct Doritos = new()
     {
-        ExternalProductId = "pb", Name = "Harris Teeter™ Creamy Peanut Butter 16 oz",
+        ExternalProductId = "doritos", Name = "Doritos® Nacho Cheese Flavored Tortilla Chips",
+        Brand = "Doritos", Size = "9.25 oz", ShelfPrice = 5.49m
+    };
+
+    private static readonly ProviderProduct StoreBrandPeanutButter = new()
+    {
+        ExternalProductId = "ht-pb", Name = "Harris Teeter™ Creamy Peanut Butter",
         Brand = "Harris Teeter", Size = "16 oz", ShelfPrice = 2.49m
     };
 
@@ -34,97 +41,165 @@ public class CatalogServiceTests
         _retailers.Setup(repository => repository.GetByIdAsync(3))
             .ReturnsAsync(new Retailer { Id = 3, Name = "Harris Teeter" });
         _providers.Setup(resolver => resolver.Resolve("Harris Teeter")).Returns(_provider.Object);
-        _provider.Setup(provider => provider.GetProductAsync("Harris Teeter", "store", "pb"))
-            .ReturnsAsync(_peanutButter);
-        _items.Setup(repository => repository.GetActiveAsync()).ReturnsAsync(new List<Item>());
-
-        var retailerProducts = new Mock<IRetailerProductRepository>();
-        retailerProducts.Setup(repository => repository.GetByItemIdAsync(It.IsAny<int>()))
-            .ReturnsAsync(new List<RetailerProduct>());
+        foreach (var product in new[] { Doritos, StoreBrandPeanutButter })
+        {
+            _provider.Setup(provider => provider.GetProductAsync("Harris Teeter", "store", product.ExternalProductId))
+                .ReturnsAsync(product);
+        }
+        _items.Setup(repository => repository.GetActiveAsync()).ReturnsAsync(_catalog);
 
         _service = new CatalogService(
             _items.Object, _stores.Object, _retailers.Object, _providers.Object,
-            new ProductMatchingService(retailerProducts.Object));
+            new ProductMatchingService(new Mock<IRetailerProductRepository>().Object));
     }
 
     [Theory]
     [InlineData("Harris Teeter™ Creamy Peanut Butter 16 oz", "Harris Teeter", "Creamy Peanut Butter")]
-    [InlineData("Kellogg's Corn Flakes Cereal Large Size 12 oz", null, "Kellogg's Corn Flakes Cereal Large Size")]
-    [InlineData("Banana (Bananas are sold individually) (Avg. 0.4lb)", null, "Banana")]
-    [InlineData("PERDUE® Fresh Boneless Skinless Chicken Breasts", "Perdue", "Fresh Boneless Skinless Chicken Breasts")]
+    [InlineData("Doritos® Nacho Cheese Flavored Tortilla Chips", "Doritos", "Nacho Cheese Flavored Tortilla Chips")]
     [InlineData("Lowes Foods Creamy Peanut Butter 16 oz", null, "Creamy Peanut Butter")]
-    public void SuggestName_DropsBrandSizeAndTrademarks(string name, string? brand, string expected)
+    [InlineData("Banana (Bananas are sold individually) (Avg. 0.4lb)", null, "Banana")]
+    public void BaseName_DropsBrandSizeAndTrademarks(string name, string? brand, string expected)
     {
         var product = new ProviderProduct { ExternalProductId = "x", Name = name, Brand = brand };
-        Assert.Equal(expected, CatalogService.SuggestName(product, "Lowes Foods"));
+        Assert.Equal(expected, CatalogService.BaseName(product, "Lowes Foods"));
     }
 
     [Fact]
-    public async Task SearchAsync_ReturnsSizedProductsWithSuggestedNames()
+    public async Task SearchAsync_ReturnsOnlySizedProducts()
     {
-        _provider.Setup(provider => provider.SearchProductsAsync("Harris Teeter", "store", "peanut butter"))
+        _provider.Setup(provider => provider.SearchProductsAsync("Harris Teeter", "store", "doritos"))
             .ReturnsAsync(new List<ProviderProduct>
             {
-                _peanutButter,
-                new() { ExternalProductId = "nosize", Name = "Peanut Butter Sampler" }
+                Doritos,
+                new() { ExternalProductId = "nosize", Name = "Doritos Variety Pack" }
             });
 
-        var result = await _service.SearchAsync(2, " peanut butter ");
+        var result = await _service.SearchAsync(2, " doritos ");
 
         Assert.Equal(CatalogResultType.Succeeded, result.Result);
-        var product = Assert.Single(result.Products);
-        Assert.Equal("Creamy Peanut Butter", product.SuggestedName);
-        Assert.Equal(2.49m, product.ShelfPrice);
+        Assert.Equal("doritos", Assert.Single(result.Products).ExternalProductId);
     }
 
     [Fact]
-    public async Task CreateItemFromProductAsync_CreatesAGenericItemThatMatchesTheProduct()
+    public async Task GetOptionsAsync_OffersTheBrandAndAnyBrand()
     {
-        var result = await _service.CreateItemFromProductAsync(2, "pb", " Creamy  Peanut Butter ", "1 lb", "Pantry");
+        var result = await _service.GetOptionsAsync(2, "doritos");
+
+        Assert.Equal(CatalogResultType.Succeeded, result.Result);
+        Assert.Empty(result.ExistingItems);
+        Assert.Collection(result.NewItems,
+            branded =>
+            {
+                Assert.Equal(CatalogItemKind.Branded, branded.Kind);
+                Assert.Equal("Nacho Cheese Flavored Tortilla Chips", branded.Name);
+                Assert.Equal("Doritos", branded.Brand);
+                Assert.Equal("9.25 oz", branded.Size);
+            },
+            generic =>
+            {
+                Assert.Equal(CatalogItemKind.Generic, generic.Kind);
+                Assert.Equal("Nacho Cheese Flavored Tortilla Chips", generic.Name);
+                Assert.Null(generic.Brand);
+            });
+    }
+
+    [Fact]
+    public async Task GetOptionsAsync_ListsExistingItemsTheProductAlreadyCountsAs()
+    {
+        // The duplicate trap: a generic item already covers this bag.
+        var generic = new Item { Id = 7, Name = "Nacho Cheese Tortilla Chips", Size = "9.25 oz", IsActive = true };
+        var otherBrand = new Item { Id = 8, Name = "Nacho Cheese Tortilla Chips", Brand = "Tostitos", Size = "9.25 oz", IsActive = true };
+        _catalog.AddRange(new[] { generic, otherBrand });
+
+        var result = await _service.GetOptionsAsync(2, "doritos");
+
+        Assert.Same(generic, Assert.Single(result.ExistingItems));
+        Assert.Equal(2, result.NewItems.Count);
+    }
+
+    [Fact]
+    public async Task GetOptionsAsync_DoesNotOfferAnOptionThatAlreadyExists()
+    {
+        _catalog.Add(new Item
+        {
+            Id = 9, Name = "Nacho Cheese Flavored Tortilla Chips", Brand = "Doritos", Size = "9.25 oz", IsActive = true
+        });
+
+        var result = await _service.GetOptionsAsync(2, "doritos");
+
+        Assert.Equal(9, Assert.Single(result.ExistingItems).Id);
+        Assert.Equal(CatalogItemKind.Generic, Assert.Single(result.NewItems).Kind);
+    }
+
+    [Fact]
+    public async Task GetOptionsAsync_StoreBrandsOnlyBecomeGenericItems()
+    {
+        var result = await _service.GetOptionsAsync(2, "ht-pb");
+
+        var option = Assert.Single(result.NewItems);
+        Assert.Equal(CatalogItemKind.Generic, option.Kind);
+        Assert.Equal("Creamy Peanut Butter", option.Name);
+        Assert.Null(option.Brand);
+    }
+
+    [Fact]
+    public async Task CreateItemAsync_BuildsTheItemFromTheProductAndRecordsTheShopper()
+    {
+        var result = await _service.CreateItemAsync(2, "doritos", CatalogItemKind.Branded, createdByUserId: 42);
 
         Assert.Equal(CatalogResultType.Succeeded, result.Result);
         Assert.True(result.Created);
-        Assert.Equal("Creamy Peanut Butter", result.Item!.Name);
-        Assert.Null(result.Item.Brand);
-        Assert.Equal("1 lb", result.Item.Size);
-        Assert.Equal("Pantry", result.Item.Category);
+        Assert.Equal("Nacho Cheese Flavored Tortilla Chips", result.Item!.Name);
+        Assert.Equal("Doritos", result.Item.Brand);
+        Assert.Equal("9.25 oz", result.Item.Size);
+        Assert.Equal(42, result.Item.CreatedByUserId);
         _items.Verify(repository => repository.AddAsync(result.Item), Times.Once);
     }
 
-    [Theory]
-    [InlineData("Crunchy Peanut Butter", "16 oz")]
-    [InlineData("Creamy Peanut Butter", "40 oz")]
-    [InlineData("Almond Butter", "16 oz")]
-    public async Task CreateItemFromProductAsync_RejectsANameOrSizeThePickedProductDoesNotMatch(
-        string name, string size)
-    {
-        var result = await _service.CreateItemFromProductAsync(2, "pb", name, size, null);
-
-        Assert.Equal(CatalogResultType.NameDoesNotMatchProduct, result.Result);
-        _items.Verify(repository => repository.AddAsync(It.IsAny<Item>()), Times.Never);
-    }
-
     [Fact]
-    public async Task CreateItemFromProductAsync_ReusesAnEquivalentExistingItem()
+    public async Task CreateItemAsync_ReusesAnEquivalentItem()
     {
-        var existing = new Item { Id = 9, Name = "creamy peanut butter", Size = "16 oz", IsActive = true };
-        _items.Setup(repository => repository.GetActiveAsync()).ReturnsAsync(new List<Item> { existing });
+        var existing = new Item { Id = 9, Name = "nacho cheese flavored tortilla chips", Size = "9.25 ounces", IsActive = true };
+        _catalog.Add(existing);
 
-        var result = await _service.CreateItemFromProductAsync(2, "pb", "Creamy Peanut Butter", "1 lb", null);
+        var result = await _service.CreateItemAsync(2, "doritos", CatalogItemKind.Generic, createdByUserId: 42);
 
-        Assert.Equal(CatalogResultType.Succeeded, result.Result);
         Assert.False(result.Created);
         Assert.Same(existing, result.Item);
         _items.Verify(repository => repository.AddAsync(It.IsAny<Item>()), Times.Never);
     }
 
     [Fact]
-    public async Task CreateItemFromProductAsync_WhenStoreNoLongerListsProduct_ReturnsProductNotFound()
+    public async Task CreateItemAsync_RefusesABrandedStoreBrandItem()
+    {
+        var result = await _service.CreateItemAsync(2, "ht-pb", CatalogItemKind.Branded, createdByUserId: 42);
+
+        Assert.Equal(CatalogResultType.OptionNotAvailable, result.Result);
+        _items.Verify(repository => repository.AddAsync(It.IsAny<Item>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Options_ThatWouldNotMatchTheirOwnProduct_AreDropped()
+    {
+        // A one-word name is too vague to match automatically unless sold per lb.
+        _provider.Setup(provider => provider.GetProductAsync("Harris Teeter", "store", "chips"))
+            .ReturnsAsync(new ProviderProduct
+            {
+                ExternalProductId = "chips", Name = "Pringles® Chips", Brand = "Pringles", Size = "5.5 oz"
+            });
+
+        var result = await _service.GetOptionsAsync(2, "chips");
+
+        Assert.Empty(result.NewItems);
+    }
+
+    [Fact]
+    public async Task GetOptionsAsync_WhenTheStoreNoLongerListsTheProduct_ReturnsProductNotFound()
     {
         _provider.Setup(provider => provider.GetProductAsync("Harris Teeter", "store", "gone"))
             .ReturnsAsync((ProviderProduct?)null);
 
-        var result = await _service.CreateItemFromProductAsync(2, "gone", "Creamy Peanut Butter", "16 oz", null);
+        var result = await _service.GetOptionsAsync(2, "gone");
 
         Assert.Equal(CatalogResultType.ProductNotFound, result.Result);
     }

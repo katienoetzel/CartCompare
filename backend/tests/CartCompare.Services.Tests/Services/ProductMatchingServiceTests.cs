@@ -833,6 +833,23 @@ public class ProductMatchingServiceTests
         Assert.Equal(expectedMatch, result.IsMatch);
     }
 
+    [Theory]
+    [InlineData("Doritos Nacho Cheese Flavored Tortilla Chips 9.25 oz", true)]
+    [InlineData("Tostitos Nacho Cheese Tortilla Chips 9.25 oz", false)]
+    [InlineData("Lowes Foods Nacho Cheese Tortilla Chips with Doritos Seasoning 9.25 oz", false)]
+    public async Task EvaluateAsync_WhenProductHasNoBrandField_ReadsTheBrandFromTheStartOfItsName(
+        string productName, bool expectedMatch)
+    {
+        // Lowe's Foods reports no brands.
+        var item = CreateItem(id: 1, name: "Nacho Cheese Tortilla Chips", brand: "Doritos", size: "9.25 oz");
+        var providerProduct = CreateProviderProduct(name: productName, brand: null, size: "9.25 oz");
+        SetupExistingProducts(item.Id, new List<RetailerProduct>());
+
+        var result = await _service.EvaluateAsync(item, providerProduct);
+
+        Assert.Equal(expectedMatch, result.IsMatch);
+    }
+
     private static Item CreateItem(
         int id,
         string name,

@@ -1,20 +1,30 @@
 import { useState } from "react";
 
-import { createCatalogItem, searchCatalog } from "./api/catalog";
+import {
+  createCatalogItem,
+  getProductOptions,
+  searchCatalog,
+} from "./api/catalog";
+
+function itemDetails(item) {
+  return [item.brand ?? "Any brand", item.size].filter(Boolean).join(" · ");
+}
 
 // Lets a shopper add an item the catalog is missing by picking a real
-// product from a nearby store. One store per retailer is searched.
+// product from a nearby store. One store per retailer is searched. The
+// server builds the item from the product; shoppers only pick an option.
 function CatalogSearch({ query, stores, onItemCreated }) {
   const [results, setResults] = useState([]);
   const [failedRetailers, setFailedRetailers] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchedQuery, setSearchedQuery] = useState("");
   const [picked, setPicked] = useState(null);
-  const [draft, setDraft] = useState({ name: "", size: "", category: "" });
-  const [isSaving, setIsSaving] = useState(false);
+  const [options, setOptions] = useState(null);
+  const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState("");
 
   const trimmedQuery = query.trim();
+
   // Stores arrive nearest first; search the nearest one of each retailer.
   const storePerRetailer = stores.filter(
     (store, index) =>
@@ -37,6 +47,7 @@ function CatalogSearch({ query, stores, onItemCreated }) {
     setIsSearching(true);
     setError("");
     setPicked(null);
+    setOptions(null);
     setResults([]);
     setFailedRetailers([]);
 
@@ -63,36 +74,54 @@ function CatalogSearch({ query, stores, onItemCreated }) {
     setIsSearching(false);
   }
 
-  function handlePick(product) {
+  async function handlePick(product) {
     setPicked(product);
+    setOptions(null);
     setError("");
-    setDraft({ name: product.suggestedName, size: product.size, category: "" });
+    setIsBusy(true);
+
+    try {
+      setOptions(await getProductOptions(product.store.id, product.externalProductId));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsBusy(false);
+    }
   }
 
-  async function handleCreate(event) {
-    event.preventDefault();
-    setIsSaving(true);
+  function finish() {
+    setPicked(null);
+    setOptions(null);
+    setResults([]);
+    setSearchedQuery("");
+  }
+
+  async function handleUseExisting(item) {
+    finish();
+    await onItemCreated(item, false);
+  }
+
+  async function handleCreate(kind) {
+    setIsBusy(true);
     setError("");
 
     try {
-      const result = await createCatalogItem({
-        storeLocationId: picked.store.id,
-        externalProductId: picked.externalProductId,
-        name: draft.name,
-        size: draft.size,
-        category: draft.category || null,
-      });
-
-      setPicked(null);
-      setResults([]);
-      setSearchedQuery("");
+      const result = await createCatalogItem(
+        picked.store.id,
+        picked.externalProductId,
+        kind
+      );
+      finish();
       await onItemCreated(result.item, result.created);
     } catch (err) {
       setError(err.message);
     } finally {
-      setIsSaving(false);
+      setIsBusy(false);
     }
   }
+
+  const hasChoices =
+    options && (options.existingItems.length > 0 || options.newItems.length > 0);
 
   return (
     <div className="catalog-search">
@@ -116,42 +145,71 @@ function CatalogSearch({ query, stores, onItemCreated }) {
       )}
 
       {picked ? (
-        <form className="catalog-form" onSubmit={handleCreate}>
+        <div className="catalog-options">
           <p>
-            New item based on <strong>{picked.name}</strong> ({picked.retailerName}). Edit the
-            name to drop the brand; it must still describe this product.
+            <strong>{picked.name}</strong> ({picked.retailerName}, {picked.size})
           </p>
 
-          <label className="retailer-field">
-            <span>Item name</span>
-            <input
-              value={draft.name}
-              onChange={(event) => setDraft({ ...draft, name: event.target.value })}
-              required
-              minLength={2}
-              maxLength={100}
-            />
-          </label>
+          {isBusy && !options && <p role="status">Checking the catalog...</p>}
 
-          <label className="retailer-field">
-            <span>Size</span>
-            <input
-              value={draft.size}
-              onChange={(event) => setDraft({ ...draft, size: event.target.value })}
-              required
-              maxLength={50}
-            />
-          </label>
+          {options?.existingItems.length > 0 && (
+            <section aria-label="Already in the catalog">
+              <h3>Already in the catalog</h3>
+              <p className="catalog-hint">This product already counts as:</p>
+              <ul className="catalog-results">
+                {options.existingItems.map((item) => (
+                  <li key={item.id} className="item-card">
+                    <div>
+                      <h3>{item.name}</h3>
+                      <p>{itemDetails(item)}</p>
+                    </div>
+                    <button
+                      className="button button-primary"
+                      type="button"
+                      onClick={() => handleUseExisting(item)}
+                      disabled={isBusy}
+                    >
+                      Add to my list
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-          <label className="retailer-field">
-            <span>Category (optional)</span>
-            <input
-              value={draft.category}
-              onChange={(event) => setDraft({ ...draft, category: event.target.value })}
-              maxLength={50}
-              placeholder="Pantry"
-            />
-          </label>
+          {options?.newItems.length > 0 && (
+            <section aria-label="Add a new item">
+              <h3>Add a new item</h3>
+              <ul className="catalog-results">
+                {options.newItems.map((option) => (
+                  <li key={option.kind} className="item-card">
+                    <div>
+                      <h3>{option.name}</h3>
+                      <p>
+                        {option.kind === "Branded"
+                          ? `Only ${option.brand} · ${option.size}`
+                          : `Any brand · ${option.size}`}
+                      </p>
+                    </div>
+                    <button
+                      className="button button-secondary"
+                      type="button"
+                      onClick={() => handleCreate(option.kind)}
+                      disabled={isBusy}
+                    >
+                      {option.kind === "Branded" ? `Add as ${option.brand}` : "Add as any brand"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {options && !hasChoices && (
+            <p className="empty-state">
+              This product can't be added automatically. Try a more specific product.
+            </p>
+          )}
 
           {error && (
             <p className="alert alert-error" role="alert">
@@ -159,15 +217,10 @@ function CatalogSearch({ query, stores, onItemCreated }) {
             </p>
           )}
 
-          <div className="catalog-form-actions">
-            <button className="button button-primary" type="submit" disabled={isSaving}>
-              {isSaving ? "Adding..." : "Add item to my list"}
-            </button>
-            <button className="button button-link" type="button" onClick={() => setPicked(null)}>
-              Back to results
-            </button>
-          </div>
-        </form>
+          <button className="button button-link" type="button" onClick={() => setPicked(null)}>
+            Back to results
+          </button>
+        </div>
       ) : (
         results.length > 0 && (
           <ul className="catalog-results" aria-label="Store products">

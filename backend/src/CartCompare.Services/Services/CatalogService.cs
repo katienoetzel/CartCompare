@@ -10,6 +10,9 @@ namespace CartCompare.Services.Services;
 
 public class CatalogService : ICatalogService
 {
+    // Enough to show the likely candidates without a long list.
+    private const int MaxExistingItems = 10;
+
     private readonly IItemRepository _items;
     private readonly IStoreLocationRepository _stores;
     private readonly IRetailerRepository _retailers;
@@ -45,44 +48,119 @@ public class CatalogService : ICatalogService
             Products = products
                 // Without a size an item cannot be matched automatically.
                 .Where(product => !string.IsNullOrWhiteSpace(product.Size))
-                .Select(product => new CatalogProduct
-                {
-                    ExternalProductId = product.ExternalProductId,
-                    Name = product.Name,
-                    Brand = product.Brand,
-                    Size = product.Size,
-                    ShelfPrice = product.ShelfPrice,
-                    SuggestedName = SuggestName(product, retailer.Name)
-                })
+                .Select(ToCatalogProduct)
                 .ToList()
         };
     }
 
-    public async Task<CatalogItemResult> CreateItemFromProductAsync(
+    public async Task<CatalogProductOptions> GetOptionsAsync(
+        int storeLocationId, string externalProductId)
+    {
+        var (result, store, retailer, provider) = await ResolveAsync(storeLocationId);
+        if (result != CatalogResultType.Succeeded)
+            return new CatalogProductOptions { Result = result };
+
+        // Re-read the product from the retailer rather than trusting the client.
+        var product = await provider!.GetProductAsync(
+            retailer!.Name, store!.ExternalLocationId, externalProductId.Trim());
+        if (product is null || string.IsNullOrWhiteSpace(product.Size))
+            return new CatalogProductOptions { Result = CatalogResultType.ProductNotFound };
+
+        var catalog = await _items.GetActiveAsync();
+
+        var existing = catalog
+            .Where(item => CountsAs(item, product))
+            .OrderBy(item => item.Brand is null) // Exact-brand items first.
+            .ThenBy(item => item.Name)
+            .Take(MaxExistingItems)
+            .ToList();
+
+        return new CatalogProductOptions
+        {
+            Result = CatalogResultType.Succeeded,
+            Product = ToCatalogProduct(product),
+            ExistingItems = existing,
+            NewItems = BuildOptions(product, retailer.Name)
+                .Where(option => !catalog.Any(item => IsEquivalent(item, option)))
+                .ToList()
+        };
+    }
+
+    public async Task<CatalogItemResult> CreateItemAsync(
         int storeLocationId, string externalProductId,
-        string name, string size, string? category)
+        CatalogItemKind kind, int createdByUserId)
     {
         var (result, store, retailer, provider) = await ResolveAsync(storeLocationId);
         if (result != CatalogResultType.Succeeded)
             return new CatalogItemResult { Result = result };
 
-        // Re-read the product from the retailer rather than trusting the client.
         var product = await provider!.GetProductAsync(
             retailer!.Name, store!.ExternalLocationId, externalProductId.Trim());
-        if (product is null)
+        if (product is null || string.IsNullOrWhiteSpace(product.Size))
             return new CatalogItemResult { Result = CatalogResultType.ProductNotFound };
 
-        var draft = new Item
-        {
-            Name = Regex.Replace(name.Trim(), @"\s+", " "),
-            Size = size.Trim(),
-            Category = string.IsNullOrWhiteSpace(category) ? null : category.Trim(),
-            IsActive = true
-        };
+        // The server rebuilds the option; the request only names its kind.
+        var option = BuildOptions(product, retailer.Name)
+            .FirstOrDefault(candidate => candidate.Kind == kind);
+        if (option is null)
+            return new CatalogItemResult { Result = CatalogResultType.OptionNotAvailable };
 
-        // The same test comparisons use: the new item must match the picked product.
-        var match = await _matching.EvaluateAsync(draft, product);
-        var candidate = new ProductCandidate
+        var existing = (await _items.GetActiveAsync())
+            .FirstOrDefault(item => IsEquivalent(item, option));
+        if (existing is not null)
+            return new CatalogItemResult { Result = CatalogResultType.Succeeded, Item = existing };
+
+        var item = new Item
+        {
+            Name = option.Name,
+            Brand = option.Brand,
+            Size = option.Size,
+            IsActive = true,
+            CreatedByUserId = createdByUserId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        await _items.AddAsync(item);
+
+        return new CatalogItemResult { Result = CatalogResultType.Succeeded, Item = item, Created = true };
+    }
+
+    // The branded and generic items this product could become. Each is
+    // kept only if it would match the product it came from.
+    private List<CatalogItemOption> BuildOptions(
+        ProviderProduct product, string retailerName)
+    {
+        var brand = product.Brand?.Trim();
+        var name = BaseName(product, retailerName);
+        var size = product.Size!.Trim();
+        var options = new List<CatalogItemOption>();
+
+        // A store brand only exists at one retailer, so an item tied to it
+        // could never be compared across stores.
+        if (!string.IsNullOrWhiteSpace(brand) && !StoreBrands.IsStoreBrand(brand) &&
+            !string.Equals(brand, retailerName, StringComparison.OrdinalIgnoreCase))
+        {
+            options.Add(new CatalogItemOption
+            {
+                Kind = CatalogItemKind.Branded, Name = name, Brand = brand, Size = size
+            });
+        }
+
+        options.Add(new CatalogItemOption
+        {
+            Kind = CatalogItemKind.Generic, Name = name, Size = size
+        });
+
+        return options
+            .Where(option => CountsAs(ToItem(option), product))
+            .ToList();
+    }
+
+    private bool CountsAs(Item item, ProviderProduct product)
+    {
+        var match = _matching.EvaluateDescription(item, product);
+
+        return AutomaticProductMatchPolicy.IsSafe(item, new ProductCandidate
         {
             ExternalProductId = product.ExternalProductId,
             Name = product.Name,
@@ -92,24 +170,32 @@ public class CatalogService : ICatalogService
             MatchMethod = match.MatchMethod,
             MatchConfidence = match.MatchConfidence,
             MatchReason = match.Reason
-        };
-        if (!AutomaticProductMatchPolicy.IsSafe(draft, candidate))
-            return new CatalogItemResult { Result = CatalogResultType.NameDoesNotMatchProduct };
-
-        var existing = (await _items.GetActiveAsync()).FirstOrDefault(item =>
-            string.Equals(item.Name.Trim(), draft.Name, StringComparison.OrdinalIgnoreCase) &&
-            item.Size is not null &&
-            ProductSize.Matches(item.Size, draft.Size) &&
-            ProductSize.Matches(draft.Size, item.Size));
-        if (existing is not null)
-            return new CatalogItemResult { Result = CatalogResultType.Succeeded, Item = existing };
-
-        draft.CreatedAt = DateTime.UtcNow;
-        draft.UpdatedAt = DateTime.UtcNow;
-        await _items.AddAsync(draft);
-
-        return new CatalogItemResult { Result = CatalogResultType.Succeeded, Item = draft, Created = true };
+        });
     }
+
+    // Same name, same brand (or both generic), same size in any unit.
+    private static bool IsEquivalent(Item item, CatalogItemOption option)
+    {
+        return string.Equals(item.Name.Trim(), option.Name, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(item.Brand?.Trim() ?? "", option.Brand ?? "", StringComparison.OrdinalIgnoreCase) &&
+            item.Size is not null &&
+            ProductSize.Matches(item.Size, option.Size) &&
+            ProductSize.Matches(option.Size, item.Size);
+    }
+
+    private static Item ToItem(CatalogItemOption option) => new()
+    {
+        Name = option.Name, Brand = option.Brand, Size = option.Size, IsActive = true
+    };
+
+    private static CatalogProduct ToCatalogProduct(ProviderProduct product) => new()
+    {
+        ExternalProductId = product.ExternalProductId,
+        Name = product.Name,
+        Brand = product.Brand,
+        Size = product.Size,
+        ShelfPrice = product.ShelfPrice
+    };
 
     private async Task<(CatalogResultType, StoreLocation?, Retailer?, IPriceProvider?)> ResolveAsync(
         int storeLocationId)
@@ -126,9 +212,10 @@ public class CatalogService : ICatalogService
             : (CatalogResultType.Succeeded, store, retailer, provider);
     }
 
+    // The product name without its brand, size and trademark text:
     // "Harris Teeter™ Creamy Peanut Butter 16 oz" -> "Creamy Peanut Butter".
     // Lowe's Foods reports no brands, so a leading store name counts as one.
-    public static string SuggestName(ProviderProduct product, string retailerName)
+    public static string BaseName(ProviderProduct product, string retailerName)
     {
         var name = Regex.Replace(product.Name, @"[™®©]", "");
         name = Regex.Replace(name, @"\([^)]*\)", " ");
