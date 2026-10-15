@@ -105,8 +105,14 @@ gcloud compute routers create cartcompare-router --network=default --region=us-e
 gcloud compute routers nats create cartcompare-nat --router=cartcompare-router --region=us-east1 \
   --nat-all-subnet-ip-ranges --nat-external-ip-pool=cartcompare-egress
 gcloud run services update cartcompare-api --region=us-east1 \
-  --network=default --subnet=default --vpc-egress=all-traffic
+  --network=default --subnet=default --vpc-egress=all-traffic \
+  --update-env-vars DOTNET_SYSTEM_NET_DISABLEIPV6=1
 ```
+
+`DOTNET_SYSTEM_NET_DISABLEIPV6=1` matters: the VPC subnet only routes IPv4,
+but Neon's hostname also resolves to IPv6. Without it, .NET sometimes tries
+the IPv6 address first and startup crashes with `Failed to connect to
+[2600:…]:5432` / `Network is unreachable`.
 
 This needs the project's `default` network with a `us-east1` subnet
 (`gcloud compute networks subnets list --network=default --regions=us-east1`).

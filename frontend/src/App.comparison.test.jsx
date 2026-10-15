@@ -237,6 +237,23 @@ describe(
       expect(screen.getByRole('checkbox', { name: /Store 11/ })).not.toBeChecked()
     })
 
+    it('fills the suggested ZIP when Tab is pressed in the empty box', async () => {
+      const user = userEvent.setup()
+      render(<App />)
+      const zip = screen.getByRole('textbox', { name: 'ZIP code' })
+
+      await user.click(zip)
+      await user.tab()
+
+      expect(zip).toHaveValue('27613')
+      expect(zip).toHaveFocus()
+      expect(screen.queryByText('Tab to use 27613')).not.toBeInTheDocument()
+
+      // With text in the box, Tab moves on as usual.
+      await user.tab()
+      expect(zip).not.toHaveFocus()
+    })
+
     it('keeps returned stores when another retailer fails', async () => {
       server.use(http.post(`${API_BASE_URL}/api/store-locations/search`, () =>
         HttpResponse.json({

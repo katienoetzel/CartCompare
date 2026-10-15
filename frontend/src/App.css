@@ -995,3 +995,8 @@
 .catalog-options section > h3 {
   font-size: 15px;
 }
+
+.field-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+}

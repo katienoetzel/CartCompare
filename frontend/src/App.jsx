@@ -44,6 +44,9 @@ import "./App.css";
 // Matches the API's limit on one comparison request.
 const MAX_COMPARED_STORES = 10;
 
+// Shown greyed out in the empty ZIP box; Tab fills it in.
+const SUGGESTED_POSTAL_CODE = "27613";
+
 // Items sized "per lb" are bought by the pound: quantity is pounds
 // and the unit price is per pound.
 function isPerPound(size) {
@@ -249,6 +252,15 @@ function App() {
 
   function handleRetailerChange(event) {
     setSelectedRetailerId(event.target.value);
+  }
+
+  // Tab in the empty ZIP box accepts the suggestion shown there instead
+  // of moving on; once something is typed, Tab moves focus as usual.
+  function handlePostalCodeKeyDown(event) {
+    if (event.key === "Tab" && !event.shiftKey && postalCode === "") {
+      event.preventDefault();
+      setPostalCode(SUGGESTED_POSTAL_CODE);
+    }
   }
 
   async function handleStoreSearch(event) {
@@ -958,8 +970,15 @@ function App() {
                         maxLength={5}
                         value={postalCode}
                         onChange={(event) => setPostalCode(event.target.value)}
-                        placeholder="27613"
+                        onKeyDown={handlePostalCodeKeyDown}
+                        placeholder={SUGGESTED_POSTAL_CODE}
+                        aria-describedby="postal-code-hint"
                       />
+                      {postalCode === "" && (
+                        <small id="postal-code-hint" className="field-hint" aria-hidden="true">
+                          Tab to use {SUGGESTED_POSTAL_CODE}
+                        </small>
+                      )}
                     </label>
                     <button
                       className="button button-secondary"
