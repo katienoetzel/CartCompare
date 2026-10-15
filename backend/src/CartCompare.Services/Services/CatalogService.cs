@@ -32,25 +32,49 @@ public class CatalogService : ICatalogService
     }
 
     public async Task<CatalogSearchResult> SearchAsync(
-        int storeLocationId, string query)
+        string query)
     {
-        var (result, store, retailer, provider) = await ResolveAsync(storeLocationId);
-        if (result != CatalogResultType.Succeeded)
-            return new CatalogSearchResult { Result = result, RetailerName = retailer?.Name };
+        var result = new CatalogSearchResult();
 
-        var products = await provider!.SearchProductsAsync(
-            retailer!.Name, store!.ExternalLocationId, query.Trim());
-
-        return new CatalogSearchResult
+        foreach (var retailer in await _retailers.GetActiveAsync())
         {
-            Result = CatalogResultType.Succeeded,
-            RetailerName = retailer.Name,
-            Products = products
-                // Without a size an item cannot be matched automatically.
-                .Where(product => !string.IsNullOrWhiteSpace(product.Size))
-                .Select(ToCatalogProduct)
-                .ToList()
-        };
+            var provider = _providers.Resolve(retailer.Name);
+
+            // The most recently seen store is the likeliest to still exist.
+            // A retailer with no known store yet is skipped.
+            var store = (await _stores.GetByRetailerIdAsync(retailer.Id))
+                .OrderByDescending(candidate => candidate.LastSeenAt)
+                .FirstOrDefault();
+
+            if (provider is null || store is null)
+            {
+                continue;
+            }
+
+            try
+            {
+                var products = await provider.SearchProductsAsync(
+                    retailer.Name, store.ExternalLocationId, query.Trim());
+
+                result.Retailers.Add(new CatalogRetailerProducts
+                {
+                    RetailerName = retailer.Name,
+                    StoreLocationId = store.Id,
+                    Products = products
+                        // Without a size an item cannot be matched automatically.
+                        .Where(product => !string.IsNullOrWhiteSpace(product.Size))
+                        .Select(ToCatalogProduct)
+                        .ToList()
+                });
+            }
+            catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+            {
+                // One retailer failing must not hide the others' products.
+                result.FailedRetailers.Add(retailer.Name);
+            }
+        }
+
+        return result;
     }
 
     public async Task<CatalogProductOptions> GetOptionsAsync(
@@ -193,8 +217,7 @@ public class CatalogService : ICatalogService
         ExternalProductId = product.ExternalProductId,
         Name = product.Name,
         Brand = product.Brand,
-        Size = product.Size,
-        ShelfPrice = product.ShelfPrice
+        Size = product.Size
     };
 
     private async Task<(CatalogResultType, StoreLocation?, Retailer?, IPriceProvider?)> ResolveAsync(

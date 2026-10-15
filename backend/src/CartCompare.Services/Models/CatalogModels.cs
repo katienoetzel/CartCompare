@@ -4,14 +4,14 @@ using CartCompare.Entities;
 namespace CartCompare.Services.Models;
 
 // A product found in a retailer's catalog, offered as the basis
-// for a grocery item.
+// for a grocery item. No price: it comes from an arbitrary store of
+// the chain, so real prices only appear in comparisons.
 public class CatalogProduct
 {
     public required string ExternalProductId { get; set; }
     public required string Name { get; set; }
     public string? Brand { get; set; }
     public string? Size { get; set; }
-    public decimal? ShelfPrice { get; set; }
 }
 
 // Sent as "Branded" / "Generic" in JSON.
@@ -46,11 +46,21 @@ public enum CatalogResultType
     OptionNotAvailable
 }
 
+// One retailer's search results. StoreLocationId is the store that was
+// searched; options and creation for its products use the same store.
+public class CatalogRetailerProducts
+{
+    public required string RetailerName { get; set; }
+    public int StoreLocationId { get; set; }
+    public List<CatalogProduct> Products { get; set; } = new();
+}
+
 public class CatalogSearchResult
 {
-    public CatalogResultType Result { get; set; }
-    public string? RetailerName { get; set; }
-    public List<CatalogProduct> Products { get; set; } = new();
+    public List<CatalogRetailerProducts> Retailers { get; set; } = new();
+
+    // Retailers whose search failed; the others are still returned.
+    public List<string> FailedRetailers { get; set; } = new();
 }
 
 public class CatalogProductOptions

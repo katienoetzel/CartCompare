@@ -1,10 +1,9 @@
 import { apiRequest } from "./apiClient";
 
-export function searchCatalog(storeLocationId, query) {
-  const params = new URLSearchParams({
-    storeLocationId: String(storeLocationId),
-    query,
-  });
+// Searches every retailer; no location needed. Returns
+// { retailers: [{ retailerName, storeLocationId, products }], failedRetailers }.
+export function searchCatalog(query) {
+  const params = new URLSearchParams({ query });
 
   return apiRequest(`/api/catalog/products?${params}`);
 }

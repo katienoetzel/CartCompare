@@ -24,6 +24,26 @@ public class ShopperCatalogApiTests
     };
 
     [Fact]
+    public async Task Search_NeedsNoLocationAndHidesPrices()
+    {
+        using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        var storeId = await SeedStoreAsync();
+        await SignInAsync(client, "search-shopper@example.com");
+
+        var response = await client.GetAsync("/api/catalog/products?query=doritos");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var retailer = Assert.Single(document.RootElement.GetProperty("retailers").EnumerateArray());
+        Assert.Equal("Harris Teeter", retailer.GetProperty("retailerName").GetString());
+        Assert.Equal(storeId, retailer.GetProperty("storeLocationId").GetInt32());
+        var product = Assert.Single(retailer.GetProperty("products").EnumerateArray());
+        Assert.Equal("doritos", product.GetProperty("externalProductId").GetString());
+        Assert.False(product.TryGetProperty("shelfPrice", out _));
+    }
+
+    [Fact]
     public async Task Options_ListTheBrandedAndGenericItems()
     {
         using var factory = CreateFactory();

@@ -6,8 +6,11 @@ namespace CartCompare.Services.Interfaces;
 // products, so every new item matches something and no names are typed.
 public interface ICatalogService
 {
+    // Searches every retailer, each at one store it already knows: an
+    // item only needs the product's name, brand and size, which are
+    // the same across a chain, so the shopper's location isn't needed.
     Task<CatalogSearchResult> SearchAsync(
-        int storeLocationId, string query);
+        string query);
 
     // What the picked product could become: existing catalog items it
     // already matches, and new branded or generic items.

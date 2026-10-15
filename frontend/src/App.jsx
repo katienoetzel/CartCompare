@@ -846,7 +846,6 @@ function App() {
 
                 <CatalogSearch
                   query={itemQuery}
-                  stores={stores}
                   onItemCreated={handleCatalogItemCreated}
                 />
               </section>

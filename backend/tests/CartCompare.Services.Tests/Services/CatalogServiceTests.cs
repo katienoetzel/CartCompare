@@ -64,9 +64,32 @@ public class CatalogServiceTests
         Assert.Equal(expected, CatalogService.BaseName(product, "Lowes Foods"));
     }
 
-    [Fact]
-    public async Task SearchAsync_ReturnsOnlySizedProducts()
+    private void SetupRetailers(params (Retailer Retailer, StoreLocation[] Stores)[] retailers)
     {
+        _retailers.Setup(repository => repository.GetActiveAsync())
+            .ReturnsAsync(retailers.Select(entry => entry.Retailer).ToList());
+        foreach (var (retailer, stores) in retailers)
+        {
+            _stores.Setup(repository => repository.GetByRetailerIdAsync(retailer.Id))
+                .ReturnsAsync(stores.ToList());
+        }
+    }
+
+    private static StoreLocation Store(int id, int retailerId, string externalId, DateTime lastSeenAt) => new()
+    {
+        Id = id, RetailerId = retailerId, ExternalLocationId = externalId, AddressLine1 = "Main St",
+        City = "Raleigh", State = "NC", PostalCode = "27613", LastSeenAt = lastSeenAt
+    };
+
+    [Fact]
+    public async Task SearchAsync_SearchesEachRetailerAtItsMostRecentlySeenStore()
+    {
+        var harrisTeeter = new Retailer { Id = 3, Name = "Harris Teeter" };
+        SetupRetailers((harrisTeeter, new[]
+        {
+            Store(2, 3, "store", DateTime.UtcNow),
+            Store(9, 3, "closed", DateTime.UtcNow.AddMonths(-6))
+        }));
         _provider.Setup(provider => provider.SearchProductsAsync("Harris Teeter", "store", "doritos"))
             .ReturnsAsync(new List<ProviderProduct>
             {
@@ -74,10 +97,37 @@ public class CatalogServiceTests
                 new() { ExternalProductId = "nosize", Name = "Doritos Variety Pack" }
             });
 
-        var result = await _service.SearchAsync(2, " doritos ");
+        var result = await _service.SearchAsync(" doritos ");
 
-        Assert.Equal(CatalogResultType.Succeeded, result.Result);
-        Assert.Equal("doritos", Assert.Single(result.Products).ExternalProductId);
+        var retailer = Assert.Single(result.Retailers);
+        Assert.Equal("Harris Teeter", retailer.RetailerName);
+        Assert.Equal(2, retailer.StoreLocationId);
+        Assert.Equal("doritos", Assert.Single(retailer.Products).ExternalProductId);
+        Assert.Empty(result.FailedRetailers);
+    }
+
+    [Fact]
+    public async Task SearchAsync_KeepsOtherRetailersWhenOneFails_AndSkipsRetailersWithoutStores()
+    {
+        var lowesFoods = new Retailer { Id = 4, Name = "Lowes Foods" };
+        var kroger = new Retailer { Id = 5, Name = "Kroger" };
+        var lowesProvider = new Mock<IPriceProvider>();
+        _providers.Setup(resolver => resolver.Resolve("Lowes Foods")).Returns(lowesProvider.Object);
+        _providers.Setup(resolver => resolver.Resolve("Kroger")).Returns(_provider.Object);
+        SetupRetailers(
+            (new Retailer { Id = 3, Name = "Harris Teeter" }, new[] { Store(2, 3, "store", DateTime.UtcNow) }),
+            (lowesFoods, new[] { Store(7, 4, "lowes", DateTime.UtcNow) }),
+            (kroger, Array.Empty<StoreLocation>()));
+        _provider.Setup(provider => provider.SearchProductsAsync("Harris Teeter", "store", "doritos"))
+            .ThrowsAsync(new HttpRequestException("Access Denied"));
+        lowesProvider.Setup(provider => provider.SearchProductsAsync("Lowes Foods", "lowes", "doritos"))
+            .ReturnsAsync(new List<ProviderProduct> { Doritos });
+
+        var result = await _service.SearchAsync("doritos");
+
+        Assert.Equal("Lowes Foods", Assert.Single(result.Retailers).RetailerName);
+        Assert.Equal(new[] { "Harris Teeter" }, result.FailedRetailers);
+        _provider.Verify(provider => provider.SearchProductsAsync("Kroger", It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]

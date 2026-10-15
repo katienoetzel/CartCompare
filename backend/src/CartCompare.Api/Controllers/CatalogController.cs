@@ -26,14 +26,14 @@ public class CatalogController : ControllerBase
         _catalogService = catalogService;
     }
 
+    // Searches every retailer; no location is needed (see ICatalogService).
     [HttpGet("products")]
     public async Task<IActionResult> SearchProducts(
-        [FromQuery] int storeLocationId,
         [FromQuery] string? query)
     {
         var trimmed = query?.Trim() ?? "";
 
-        if (storeLocationId <= 0 || trimmed.Length is < 2 or > 100)
+        if (trimmed.Length is < 2 or > 100)
         {
             return BadRequest(new
             {
@@ -43,18 +43,14 @@ public class CatalogController : ControllerBase
 
         var result =
             await _catalogService.SearchAsync(
-                storeLocationId,
                 trimmed
             );
 
-        return result.Result == CatalogResultType.Succeeded
-            ? Ok(new
-            {
-                storeLocationId,
-                retailerName = result.RetailerName,
-                products = result.Products
-            })
-            : Failure(result.Result, result.RetailerName);
+        return Ok(new
+        {
+            retailers = result.Retailers,
+            failedRetailers = result.FailedRetailers
+        });
     }
 
     // What a picked product could become: catalog items it already
@@ -85,7 +81,7 @@ public class CatalogController : ControllerBase
                 existingItems = result.ExistingItems,
                 newItems = result.NewItems
             })
-            : Failure(result.Result, retailerName: null);
+            : Failure(result.Result);
     }
 
     [HttpPost("items")]
@@ -113,12 +109,11 @@ public class CatalogController : ControllerBase
                 item = result.Item,
                 created = result.Created
             })
-            : Failure(result.Result, retailerName: null);
+            : Failure(result.Result);
     }
 
     private IActionResult Failure(
-        CatalogResultType result,
-        string? retailerName)
+        CatalogResultType result)
     {
         return result switch
         {
@@ -136,7 +131,7 @@ public class CatalogController : ControllerBase
             }),
             _ => BadRequest(new
             {
-                message = $"Product search is not available for {retailerName ?? "this retailer"}."
+                message = "Product search is not available for this retailer."
             })
         };
     }

@@ -11,9 +11,10 @@ function itemDetails(item) {
 }
 
 // Lets a shopper add an item the catalog is missing by picking a real
-// product from a nearby store. One store per retailer is searched. The
-// server builds the item from the product; shoppers only pick an option.
-function CatalogSearch({ query, stores, onItemCreated }) {
+// product from a retailer's catalog. No location is needed: the server
+// searches every retailer and builds the item from the product; shoppers
+// only pick an option.
+function CatalogSearch({ query, onItemCreated }) {
   const [results, setResults] = useState([]);
   const [failedRetailers, setFailedRetailers] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -25,22 +26,8 @@ function CatalogSearch({ query, stores, onItemCreated }) {
 
   const trimmedQuery = query.trim();
 
-  // Stores arrive nearest first; search the nearest one of each retailer.
-  const storePerRetailer = stores.filter(
-    (store, index) =>
-      stores.findIndex((other) => other.retailerId === store.retailerId) === index
-  );
-
   if (trimmedQuery.length < 2) {
     return null;
-  }
-
-  if (storePerRetailer.length === 0) {
-    return (
-      <p className="catalog-hint">
-        Can't find it? Find nearby stores in Step 2 to search their products.
-      </p>
-    );
   }
 
   async function handleSearch() {
@@ -51,27 +38,27 @@ function CatalogSearch({ query, stores, onItemCreated }) {
     setResults([]);
     setFailedRetailers([]);
 
-    const settled = await Promise.allSettled(
-      storePerRetailer.map((store) => searchCatalog(store.id, trimmedQuery))
-    );
+    try {
+      const result = await searchCatalog(trimmedQuery);
 
-    const found = [];
-    const failed = [];
-    settled.forEach((outcome, index) => {
-      const store = storePerRetailer[index];
-      if (outcome.status === "fulfilled") {
-        outcome.value.products.forEach((product) =>
-          found.push({ ...product, store, retailerName: outcome.value.retailerName })
-        );
-      } else {
-        failed.push(store.retailerName ?? store.name);
-      }
-    });
-
-    setResults(found);
-    setFailedRetailers(failed);
-    setSearchedQuery(trimmedQuery);
-    setIsSearching(false);
+      // Each product remembers the store it was found at; its options
+      // and creation are looked up at that same store.
+      setResults(
+        result.retailers.flatMap((retailer) =>
+          retailer.products.map((product) => ({
+            ...product,
+            retailerName: retailer.retailerName,
+            storeLocationId: retailer.storeLocationId,
+          }))
+        )
+      );
+      setFailedRetailers(result.failedRetailers);
+      setSearchedQuery(trimmedQuery);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSearching(false);
+    }
   }
 
   async function handlePick(product) {
@@ -81,7 +68,7 @@ function CatalogSearch({ query, stores, onItemCreated }) {
     setIsBusy(true);
 
     try {
-      setOptions(await getProductOptions(product.store.id, product.externalProductId));
+      setOptions(await getProductOptions(product.storeLocationId, product.externalProductId));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -107,7 +94,7 @@ function CatalogSearch({ query, stores, onItemCreated }) {
 
     try {
       const result = await createCatalogItem(
-        picked.store.id,
+        picked.storeLocationId,
         picked.externalProductId,
         kind
       );
@@ -142,6 +129,12 @@ function CatalogSearch({ query, stores, onItemCreated }) {
 
       {searchedQuery && !isSearching && results.length === 0 && failedRetailers.length === 0 && (
         <p className="empty-state">No store products found for "{searchedQuery}".</p>
+      )}
+
+      {error && !picked && (
+        <p className="alert alert-error" role="alert">
+          {error}
+        </p>
       )}
 
       {picked ? (
@@ -225,12 +218,11 @@ function CatalogSearch({ query, stores, onItemCreated }) {
         results.length > 0 && (
           <ul className="catalog-results" aria-label="Store products">
             {results.map((product) => (
-              <li key={`${product.store.id}-${product.externalProductId}`} className="item-card">
+              <li key={`${product.storeLocationId}-${product.externalProductId}`} className="item-card">
                 <div>
                   <h3>{product.name}</h3>
                   <p>
                     {product.retailerName} · {product.size}
-                    {product.shelfPrice != null && ` · $${product.shelfPrice.toFixed(2)}`}
                   </p>
                 </div>
                 <button

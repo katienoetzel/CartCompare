@@ -21,30 +21,24 @@ import { server } from './test/server'
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL
 
-const stores = [
-  { id: 5, retailerId: 2, retailerName: 'Lowes Foods', name: 'Brier Creek' },
-  { id: 6, retailerId: 2, retailerName: 'Lowes Foods', name: 'Strickland' },
-  { id: 122, retailerId: 3, retailerName: 'Harris Teeter', name: 'Corners' },
-]
-
 const doritos = {
   externalProductId: 'doritos',
   name: 'Doritos® Nacho Cheese Flavored Tortilla Chips',
   brand: 'Doritos',
   size: '9.25 oz',
-  shelfPrice: 5.49,
 }
 
-function useSearchHandler(searchedStores = []) {
+function useSearchHandler(searchedUrls = [], failedRetailers = []) {
   server.use(
     http.get(`${API_BASE_URL}/api/catalog/products`, ({ request }) => {
-      const storeLocationId = Number(new URL(request.url).searchParams.get('storeLocationId'))
-      searchedStores.push(storeLocationId)
+      searchedUrls.push(new URL(request.url))
 
       return HttpResponse.json({
-        storeLocationId,
-        retailerName: storeLocationId === 122 ? 'Harris Teeter' : 'Lowes Foods',
-        products: storeLocationId === 122 ? [doritos] : [],
+        retailers: [
+          { retailerName: 'Lowes Foods', storeLocationId: 5, products: [] },
+          { retailerName: 'Harris Teeter', storeLocationId: 122, products: [doritos] },
+        ],
+        failedRetailers,
       })
     })
   )
@@ -59,35 +53,27 @@ function useOptionsHandler(options) {
 }
 
 async function pickDoritos(user, onItemCreated = vi.fn()) {
-  render(<CatalogSearch query=" doritos " stores={stores} onItemCreated={onItemCreated} />)
+  render(<CatalogSearch query=" doritos " onItemCreated={onItemCreated} />)
   await user.click(screen.getByRole('button', { name: 'Search stores for "doritos"' }))
   await user.click(await screen.findByRole('button', { name: 'Use this' }))
 }
 
 describe('CatalogSearch', () => {
   it(
-    'asks for nearby stores before it can search their products',
-    () => {
-      render(<CatalogSearch query="peanut butter" stores={[]} onItemCreated={vi.fn()} />)
-
-      expect(
-        screen.getByText(/Find nearby stores in Step 2/)
-      ).toBeInTheDocument()
-    }
-  )
-
-  it(
-    'searches the nearest store of each retailer',
+    'searches every retailer without asking for a location',
     async () => {
-      const searchedStores = []
-      useSearchHandler(searchedStores)
+      const searchedUrls = []
+      useSearchHandler(searchedUrls, ['Kroger'])
       const user = userEvent.setup()
 
-      render(<CatalogSearch query="doritos" stores={stores} onItemCreated={vi.fn()} />)
+      render(<CatalogSearch query=" doritos " onItemCreated={vi.fn()} />)
       await user.click(screen.getByRole('button', { name: 'Search stores for "doritos"' }))
-      await screen.findByRole('button', { name: 'Use this' })
 
-      expect(searchedStores.sort((a, b) => a - b)).toEqual([5, 122])
+      expect(await screen.findByText('Harris Teeter · 9.25 oz')).toBeInTheDocument()
+      expect(screen.getByText('Could not search: Kroger.')).toBeInTheDocument()
+      expect(screen.queryByText(/\$/)).not.toBeInTheDocument()
+      expect(searchedUrls).toHaveLength(1)
+      expect(Object.fromEntries(searchedUrls[0].searchParams)).toEqual({ query: 'doritos' })
     }
   )
 
